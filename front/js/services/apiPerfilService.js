@@ -4,11 +4,22 @@ export const apiPerfilService = {
     /**
      * Busca todos os perfis
      */
-    async pegarTodos() {
-        const response = await fetch(`/api/perfis`, {
+    async pegarPaginado(page = 1, limit = 10, search = '') {
+
+        const queryParams = new URLSearchParams({
+            page: page,
+            limit: limit,
+            search: search
+        });
+
+        const response = await fetch(`/api/perfis?${queryParams.toString()}`, {
             headers: getAuthHeaders() 
         });
-        if (!response.ok) await handleResponseError(response);
+
+        if (!response.ok){
+            await handleResponseError(response);
+        }
+        
         return await response.json();
     },
 
