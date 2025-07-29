@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     startSessionManagement();
 
-
+    
     const hamburger = document.getElementById('hamburger');
     const aside = document.querySelector('aside');
     const userSearchInput = document.getElementById('user-search-input');
@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutButton = document.getElementById('logout-btn');
 
     
+    const paginationControlsContainer = document.getElementById('pagination-controls');
+    const prevPageBtn = document.getElementById('prev-page-btn');
+    const nextPageBtn = document.getElementById('next-page-btn');
+    const pageInfoSpan = document.getElementById('page-info');
+
+   
     const editUserModal = document.getElementById('edit-user-modal');
     const editUserForm = document.getElementById('edit-user-form');
     const editUserId = document.getElementById('edit-user-id');
@@ -27,11 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancel = editUserModal.querySelector('.btn-cancel');
 
     
-    let allUsers = [];
+    let usersOnCurrentPage = [];
+    let currentPage = 1;
+    let totalPages = 1;
 
-    
-
-    
     if (hamburger && aside) {
         hamburger.addEventListener('click', () => aside.classList.toggle('open'));
         document.addEventListener('click', (event) => {
@@ -57,109 +62,101 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Busca e renderiza os usuários.
-     */
+
     async function fetchAndRenderUsers() {
         try {
             noUsersMessage.textContent = 'A carregar utilizadores...';
             noUsersMessage.style.display = 'block';
             userCardsContainer.style.display = 'none';
+            paginationControlsContainer.style.display = 'none'; 
 
-            const usersFromAPI = await apiUsuarioService.pegarTodos();
-            allUsers = usersFromAPI;
-            renderUsers();
+            const searchTerm = userSearchInput.value.toLowerCase().trim();
+            const itemsPerPage = parseInt(numUsersDisplayInput.value) || 10;
+
+            const response = await apiUsuarioService.pegarPaginado(currentPage, itemsPerPage, searchTerm);
+            
+            usersOnCurrentPage = response.data;
+            totalPages = response.meta.totalPages;
+            
+            renderUserCards();
+            renderPaginationControls();
+
         } catch (error) {
             console.error('Falha ao carregar utilizadores:', error);
-            noUsersMessage.textContent = 'Falha ao carregar dados do servidor. Tente novamente mais tarde.';
+            noUsersMessage.textContent = 'Falha ao carregar dados do servidor.';
+            noUsersMessage.style.display = 'block';
+            userCardsContainer.innerHTML = '';
         }
     }
 
-    /**
-     * Renderiza os cards com base nos dados filtrados.
-     */
-    function renderUsers() {
+
+    function renderUserCards() {
         userCardsContainer.innerHTML = '';
-        let filteredUsers = [...allUsers];
 
-        const searchTerm = userSearchInput ? userSearchInput.value.toLowerCase().trim() : '';
-        if (searchTerm) {
-            filteredUsers = filteredUsers.filter(user =>
-                user.nome.toLowerCase().includes(searchTerm) ||
-                user.email.toLowerCase().includes(searchTerm)
-            );
-        }
-
-        const numToDisplay = parseInt(numUsersDisplayInput.value);
-        if (!isNaN(numToDisplay) && numToDisplay > 0) {
-            filteredUsers = filteredUsers.slice(0, numToDisplay);
-        }
-
-        if (filteredUsers.length === 0) {
-            noUsersMessage.textContent = 'Nenhum usuário encontrado.';
+        if (usersOnCurrentPage.length === 0) {
             noUsersMessage.style.display = 'block';
             userCardsContainer.style.display = 'none';
         } else {
             noUsersMessage.style.display = 'none';
-            userCardsContainer.style.display = 'grid'; // Ativa o layout de grid
+            userCardsContainer.style.display = 'grid';
             
-            filteredUsers.forEach(user => {
+            usersOnCurrentPage.forEach(user => {
                 const card = document.createElement('div');
-                card.className = 'user-card'; // Classe para estilizar o card
+                card.className = 'user-card';
                 const perfilNome = user.perfil ? user.perfil.nome : 'N/A';
 
                 card.innerHTML = `
-                    <div class="card-header">
-                        <h3>${user.nome}</h3>
-                        <span class="user-role">${perfilNome}</span>
-                    </div>
-                    <div class="card-body">
-                        <p><strong>E-mail:</strong> ${user.email}</p>
-                    </div>
+                    <div class="card-header"><h3>${user.nome}</h3><span class="user-role">${perfilNome}</span></div>
+                    <div class="card-body"><p><strong>E-mail:</strong> ${user.email}</p></div>
                     <div class="card-footer user-actions">
-                        <button class="btn-edit" data-id="${user.id}" title="Editar usuário">
-                           <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
-                        </button>
-                        <button class="btn-delete" data-id="${user.id}" title="Excluir usuário">
-                           <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
-                        </button>
-                    </div>
-                `;
+                        <button class="btn-edit" data-id="${user.id}" title="Editar usuário"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg></button>
+                        <button class="btn-delete" data-id="${user.id}" title="Excluir usuário"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg></button>
+                    </div>`;
                 userCardsContainer.appendChild(card);
             });
         }
     }
 
-    /**
-     * Abre e preenche o modal de edição.
-     */
-    async function openEditModal(userId) {
-        const user = allUsers.find(u => u.id === userId);
-        if (user) {
-            editUserId.value = user.id;
-            editUserName.value = user.nome;
-            editUserEmail.value = user.email;
 
-            try {
-                const perfis = await apiPerfilService.pegarTodos();
-                editUserType.innerHTML = '<option value="" disabled>A carregar Perfis...</option>';
-                
-                perfis.forEach(perfil => {
-                    const option = document.createElement('option');
-                    option.value = perfil.id;
-                    option.textContent = perfil.nome;
-                    if (user.perfil_id === perfil.id) {
-                        option.selected = true;
-                    }
-                    editUserType.appendChild(option);
-                });
-            } catch (error) {
-                console.error("Erro ao buscar perfis para o modal:", error);
-                editUserType.innerHTML = '<option value="" disabled selected>Erro ao carregar perfis</option>';
-            }
-
-            editUserModal.style.display = 'flex';
+    function renderPaginationControls() {
+        if (totalPages <= 1) {
+            paginationControlsContainer.style.display = 'none';
+            return;
         }
+        
+        paginationControlsContainer.style.display = 'flex';
+        pageInfoSpan.textContent = `Página ${currentPage} de ${totalPages}`;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+    }
+
+
+    async function openEditModal(userId) {
+        const user = usersOnCurrentPage.find(u => u.id === userId);
+        if (!user) return;
+
+        editUserId.value = user.id;
+        editUserName.value = user.nome;
+        editUserEmail.value = user.email;
+
+        try {
+            const perfis = await apiPerfilService.pegarTodos();
+            editUserType.innerHTML = ''; 
+            perfis.forEach(perfil => {
+                const option = document.createElement('option');
+                option.value = perfil.id;
+                option.textContent = perfil.nome;
+                if (user.perfil_id === perfil.id) {
+                    option.selected = true;
+                }
+                editUserType.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Erro ao buscar perfis para o modal:", error);
+            editUserType.innerHTML = '<option value="" disabled selected>Erro ao carregar perfis</option>';
+        }
+
+        editUserModal.style.display = 'flex';
     }
 
     function closeEditModal() {
@@ -167,22 +164,40 @@ document.addEventListener('DOMContentLoaded', () => {
         editUserForm.reset();
     }
 
-    // Lida com a submissão do formulário de edição
+   
+    userSearchInput.addEventListener('input', () => {
+        currentPage = 1; 
+        fetchAndRenderUsers();
+    });
+
+    numUsersDisplayInput.addEventListener('input', () => {
+        currentPage = 1; 
+        fetchAndRenderUsers();
+    });
+
+    
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            fetchAndRenderUsers();
+        }
+    });
+
+    nextPageBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            fetchAndRenderUsers();
+        }
+    });
+
     editUserForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const userId = parseInt(editUserId.value);
-        const selectedPerfilId = parseInt(editUserType.value);
-
         const updatedData = {
             nome: editUserName.value.trim(),
             email: editUserEmail.value.trim(),
-            perfil_id: selectedPerfilId
+            perfil_id: parseInt(editUserType.value)
         };
-
-        if (!updatedData.nome || !updatedData.email || isNaN(selectedPerfilId)) {
-            alert('Todos os campos são obrigatórios.');
-            return;
-        }
 
         try {
             await apiUsuarioService.atualizar(userId, updatedData);
@@ -190,12 +205,10 @@ document.addEventListener('DOMContentLoaded', () => {
             closeEditModal();
             fetchAndRenderUsers();
         } catch (error) {
-            console.error(error);
-            alert(`Ocorreu um erro ao atualizar o utilizador: ${error.message}`);
+            alert(`Ocorreu um erro: ${error.message}`);
         }
     });
 
-    // Lida com os cliques nos cards para editar ou deletar
     userCardsContainer.addEventListener('click', async (event) => {
         const targetButton = event.target.closest('button');
         if (!targetButton) return;
@@ -206,15 +219,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetButton.classList.contains('btn-edit')) {
             openEditModal(userId);
         } else if (targetButton.classList.contains('btn-delete')) {
-            const user = allUsers.find(u => u.id === userId);
+            const user = usersOnCurrentPage.find(u => u.id === userId);
             if (confirm(`Tem certeza que deseja excluir o usuário "${user?.nome}"?`)) {
                 try {
                     await apiUsuarioService.deletar(userId);
                     alert('Utilizador excluído com sucesso!');
                     fetchAndRenderUsers();
                 } catch (error) {
-                    console.error(error);
-                    alert(`Ocorreu um erro ao excluir o utilizador: ${error.message}`);
+                    alert(`Ocorreu um erro: ${error.message}`);
                 }
             }
         }
@@ -226,8 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     btnCancel.addEventListener('click', closeEditModal);
-    if (userSearchInput) userSearchInput.addEventListener('input', renderUsers);
-    if (numUsersDisplayInput) numUsersDisplayInput.addEventListener('input', renderUsers);
 
-    fetchAndRenderUsers(); //aplicar paginação para não pegar tudo de uma vez
+   
+    fetchAndRenderUsers();
 });
