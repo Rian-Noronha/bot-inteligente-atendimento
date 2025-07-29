@@ -19,7 +19,7 @@
                 <div class="busca">
                     <div>
                         <form action="">
-                            <input type="text" id="user-search-input" placeholder="Pesquisar usuários...">
+                            <input type="text" id="profile-search-input" placeholder="Pesquisar perfis...">
                             <button type="submit" title="Buscar">
                                 <i class="bi bi-search"></i>
                             </button>
@@ -27,8 +27,8 @@
                     </div>
                 </div>
                 <div class="items-per-page-simple">
-                    <label for="num-users-display" class="label-input-simple">Mostrar:</label>
-                    <input type="number" id="num-users-display" value="10" min="1" step="1" placeholder="Qtd. perfis">
+                    <label for="num-profiles-display" class="label-input-simple">Mostrar:</label>
+                    <input type="number" id="num-profiles-display" value="10" min="1" step="1" placeholder="Qtd. perfis">
                 </div>
             </header>
 
@@ -130,7 +130,7 @@
                 <section class="assuntos">
 
                     <div class="user-management-controls">
-                        <button id="add-user-button" class="btn-add-user">
+                        <button id="add-profile-button" class="btn-add-user">
                             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0-80Zm0 400Z"/></svg> Adicionar perfil
                         </button>
                     </div>
@@ -140,28 +140,31 @@
                         <div id="profiles-cards-container">
 
                         </div>
-                        <p id="no-users-message" style="text-align: center; color: var(--cor-fonte-fraca); display: none;">Nenhum perfil encontrado.</p>
+                        <p id="no-profiles-message" style="text-align: center; color: var(--cor-fonte-fraca); display: none;">Nenhum perfil encontrado.</p>
+                    </div>
+
+                    <div id="pagination-controls" class="pagination-controls">
+                        <button id="prev-page-btn" class="btn-pagination" title="Página Anterior">&laquo; Anterior</button>
+                        <span id="page-info">Página 1 de 1</span>
+                        <button id="next-page-btn" class="btn-pagination" title="Próxima Página">Próximo &raquo;</button>
                     </div>
 
                 </section>
             </main>
         </div>
-        <div id="edit-user-modal" class="modal-overlay">
+        <div id="edit-profile-modal" class="modal-overlay">
             <div class="modal-content">
-                <h2>Editar perfil</h2>
-                <form id="edit-user-form">
-                    <input type="hidden" id="edit-user-id">
-
+                <h2>Editar Perfil</h2>
+                <form id="edit-profile-form">
+                    <input type="hidden" id="edit-profile-id">
                      <div class="textfield">
-                        <label for="edit-user-nome">Nome</label>
-                        <input type="text" id="edit-user-nome" required>
+                        <label for="edit-profile-nome">Nome</label>
+                        <input type="text" id="edit-profile-nome" required>
                     </div>
-
                     <div class="textfield">
-                        <label for="edit-user-descricao">Descrição</label>
-                        <textarea id="edit-user-descricao" rows="3"></textarea>
+                        <label for="edit-profile-descricao">Descrição</label>
+                        <textarea id="edit-profile-descricao" rows="3"></textarea>
                     </div>
-
                     <div class="modal-actions">
                         <button type="submit" class="btn-save">Salvar</button>
                         <button type="button" class="btn-cancel">Cancelar</button>
