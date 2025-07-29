@@ -2782,7 +2782,8 @@ body.upload-page {
 
 /* O contêiner do grid que organiza os cards em ambas as páginas */
 #knowledge-library-cards-container,
-#user-cards-container {
+#user-cards-container,
+#profiles-cards-container {
     display: grid;
     /* Este é o segredo da responsividade automática */
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
