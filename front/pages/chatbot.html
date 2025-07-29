@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <title>Chatbot</title>
+</head>
+
+<body>
+    <div class="main-chatbot">
+        <div class="left-chatbot">
+            <div class="card-pergunta">
+                <h4>Faça sua pergunta</h4>
+                 <a href="./dashboard.html" id="back-button" class="back-button" title="Voltar">
+                    <i class="bi bi-arrow-left-circle"></i> Voltar
+                </a>
+                 <label for="select-theme">Tema</label>
+                <select id="select-theme">
+                    <option value="" disabled selected>A carregar...</option>
+                </select>
+                
+                <label for="select-subtheme">Micro-tema</label>
+                <select id="select-subtheme" disabled>
+                    <option value="" disabled selected>Aguardando tema...</option>
+                </select>
+                
+                <input type="text" id="input-pergunta" name="pergunta" placeholder="Digite sua pergunta aqui..." disabled>
+                <button id="ask-button" disabled>Perguntar</button>
+            </div>
+        </div>
+
+        <div class="right-chatbot">
+            <div class="card-resposta">
+                <div class="area-resposta">
+                    <div class="resposta">
+                        <div>
+                            <h4>Veja sua resposta:</h4>
+                            <textarea id="answer-area" class="area-resposta" readonly placeholder="Sua resposta aparecerá aqui..."></textarea>
+                            
+                            <div id="source-link-area" class="source-link" style="display: none;"></div>
+                        
+                        </div>
+                    </div>
+
+                    <div class="feedback-section" id="feedback-section" style="display: none;">
+                        <h4>Esta resposta foi útil?</h4>
+                        <div class="feedback-buttons">
+                            <button class="btn-feedback" id="btn-feedback-sim" title="Sim, foi útil">
+                                <i class="bi bi-hand-thumbs-up-fill"></i> Sim
+                            </button>
+                            <button class="btn-feedback" id="btn-feedback-nao" title="Não, não foi útil">
+                                <i class="bi bi-hand-thumbs-down-fill"></i> Não
+                            </button>
+                        </div>
+                        <p class="feedback-status" id="feedback-status"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="feedback-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-modal-btn">&times;</span>
+            <h4>Avalie a resposta</h4>
+            <p>Sua opinião é muito importante para melhorarmos!</p>
+            
+            <div class="star-rating" id="star-rating">
+                <span class="star" data-value="1">&#9733;</span>
+                <span class="star" data-value="2">&#9733;</span>
+                <span class="star" data-value="3">&#9733;</span>
+                <span class="star" data-value="4">&#9733;</span>
+                <span class="star" data-value="5">&#9733;</span>
+            </div>
+
+            <textarea id="feedback-comment" placeholder="Deixe um comentário (opcional)..."></textarea>
+            
+            <button id="submit-feedback-btn">Enviar Avaliação</button>
+        </div>
+    </div>
+
+    <script type="module" src="../js/chatbot.js"></script>
+</body>
+</html>

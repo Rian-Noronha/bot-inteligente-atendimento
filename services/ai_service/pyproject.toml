@@ -1,0 +1,8 @@
+[project]
+name = "ai_service"
+version = "0.1.0"
+description = "Serviço de IA para o Bot de Atendimento Inteligente"
+
+[tool.setuptools.packages.find]
+# Encontra automaticamente todos os pacotes (pastas com __init__.py)
+where = ["."] 

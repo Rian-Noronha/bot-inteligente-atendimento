@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Novo Documento</title>
+        <link rel="stylesheet" href="../css/style.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    </head>
+    <body class="upload-page">
+        <form id="upload-form" class="upload-container">
+            <a href="./knowledge_library.html" id="back-button" title="Voltar para a Biblioteca">
+                <i class="bi bi-arrow-left-circle"></i> Voltar
+            </a>
+            
+            <h1>Novo Documento</h1>
+
+            <div class="textfield">
+                <label for="select-theme">Tema:</label>
+                <select id="select-theme" required>
+                    <option value="">Selecione um tema...</option>
+                </select>
+            </div>
+            
+            <div class="textfield">
+                <label for="select-subtheme">Micro-tema:</label>
+                <select id="select-subtheme" required disabled>
+                    <option value="">Escolha um tema primeiro...</option>
+                </select>
+            </div>
+
+            <div class="textfield">
+                <label for="document-title">Título do Documento:</label>
+                <input type="text" id="document-title" placeholder="Ex.: Bloqueio de Cartão por Suspeita de Fraude" required>
+            </div>
+
+            <div class="textfield">
+                <label for="document-description">Descrição:</label>
+                <textarea id="document-description" rows="4" placeholder="Breve descrição sobre o que o documento aborda..."></textarea>
+            </div>
+
+            <div class="textfield">
+                <label for="document-keywords">Palavras-chave (separadas por vírgula)</label>
+                <input type="text" id="document-keywords" placeholder="Ex: fraude, bloqueio, cartão, segurança">
+            </div>
+
+            <hr>
+            <p class="form-instruction">Forneça o conteúdo principal digitando no campo "Solução" OU fazendo o upload de um arquivo.</p>
+            
+            <div class="textfield">
+                <label for="text-solution">Solução (Manual):</label>
+                <textarea id="text-solution" rows="6" placeholder="Descreva a solução ou o conteúdo principal aqui..."></textarea>
+            </div>
+
+            <div class="textfield">
+                <label for="arquivo-input">Ou envie um Arquivo para Processamento (.pdf, .docx):</label>
+                <input type="file" id="arquivo-input" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            </div>
+
+            <button type="submit" class="upload-button" id="uploadButton" disabled>Salvar Documento</button>
+            <p class="upload-status" id="uploadStatus"></p>
+        </form>
+
+       <script type="module" src="../js/upload.js"></script>
+    </body>
+</html>

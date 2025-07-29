@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+ai_service.egg-info/PKG-INFO
+ai_service.egg-info/SOURCES.txt
+ai_service.egg-info/dependency_links.txt
+ai_service.egg-info/top_level.txt
+api/__init__.py
+api/endpoints/__init__.py
+api/endpoints/embedding.py
+api/endpoints/rag.py
+api/endpoints/router.py
+core/__init__.py
+core/config.py
+core/database.py
+core/models.py
+schemas/__init__.py
+schemas/document.py

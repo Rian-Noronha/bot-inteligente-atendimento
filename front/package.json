@@ -1,0 +1,19 @@
+{
+  "name": "front",
+  "version": "1.0.0",
+  "description": "Projeto frontend da aplicação bot-atendimento-inteligente",
+  "scripts": {
+    "dev": "vite",               
+    "build": "vite build",       
+    "preview": "vite preview"    
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^7.0.0" 
+  },
+  "dependencies": {
+    "firebase": "^11.10.0"
+  }
+}

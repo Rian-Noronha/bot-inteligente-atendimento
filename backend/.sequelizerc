@@ -1,0 +1,16 @@
+// .sequelizerc
+const path = require('path');
+
+module.exports = {
+  // Aponta para o arquivo de configuração dentro da pasta 'src'
+  'config': path.resolve('src', 'config', 'database.js'),
+
+  // Aponta para a pasta onde os models são definidos
+  'models-path': path.resolve('src', 'models'),
+
+  // Aponta para a pasta onde os seeders (dados iniciais) são definidos
+  'seeders-path': path.resolve('src', 'seeders'),
+
+  // Aponta para a pasta onde as migrations (alterações do banco) são definidas
+  'migrations-path': path.resolve('src', 'migrations')
+};

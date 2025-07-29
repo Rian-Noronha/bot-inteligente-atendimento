@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="theme-color" content="#06b6d4" />
+        <link rel="stylesheet" href="../css/style.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+        <title>Gerenciamento de Perfis</title>
+    </head>
+
+    <body>
+        <div id="content">
+            <header>
+                <div id="hamburger" title="Abrir/Fechar menu">
+                    &#9776;
+                </div>
+                <div class="busca">
+                    <div>
+                        <form action="">
+                            <input type="text" id="user-search-input" placeholder="Pesquisar usuários...">
+                            <button type="submit" title="Buscar">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="items-per-page-simple">
+                    <label for="num-users-display" class="label-input-simple">Mostrar:</label>
+                    <input type="number" id="num-users-display" value="10" min="1" step="1" placeholder="Qtd. perfis">
+                </div>
+            </header>
+
+            <aside>
+                <div class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        xml:space="preserve" version="1.1" 
+                        style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+                        viewBox="0 0 300 193" xmlns:xlink="http://www.w3.org/1999/xlink"> 
+                        <defs>
+                            <style type="text/css">
+                                .str0 {stroke:#008145;stroke-width:0.900007}
+                                .fil2 {fill:none}
+                                .fil1 {fill:#008145}
+                                .fil0 {fill:url(#id0)}
+                            </style>
+                            <linearGradient id="id0" gradientUnits="userSpaceOnUse" x1="300.002" y1="193.001" x2="-0" y2="-0.301183">
+                                <stop offset="0" style="stop-opacity:1; stop-color:#F7C500"/>
+                                <stop offset="0.501961" style="stop-opacity:1; stop-color:#FFE800"/>
+                                <stop offset="1" style="stop-opacity:1; stop-color:#FACF00"/>
+                            </linearGradient>
+                        </defs>
+                        <g id="Camada_x0020_1">
+                            <path id="Combined-Shape" class="fil0" d="M225 0c23,0 40,6 53,18 13,12 20,29 22,51l0 124 -225 0c-23,0 -40,-6 -53,-18 -13,-13 -20,-30 -22,-51l0 -124 225 0z"/>
+                            <path id="Shape" class="fil1 str0" d="M94 57l19 0c0,-6 -3,-11 -10,-11 -6,0 -9,5 -9,11zm35 9l-34 0c1,8 6,11 15,11 5,0 10,-2 15,-5l0 13c-6,3 -12,4 -18,4 -17,0 -30,-10 -30,-28 0,-18 12,-28 27,-28 19,0 25,14 25,30l0 3zm-89 22l-26 -81 21 0 17 64 19 -64 20 0 -27 81 -24 0zm80 69c0,4 4,7 9,7 8,0 13,-8 13,-15 -3,0 -6,0 -9,0 -7,0 -13,2 -13,8zm42 18l-19 0c0,-3 -1,-6 -1,-9 -5,7 -10,10 -19,10 -8,0 -15,-2 -19,-7l0 4c-6,2 -13,3 -24,3 -22,0 -47,-10 -47,-41 0,-28 20,-42 47,-42 8,0 16,2 24,4l-2 17c-7,-3 -14,-5 -21,-5 -15,0 -25,11 -25,26 0,16 11,25 27,25 6,0 12,-1 17,-3 0,-18 20,-20 32,-20 3,0 6,0 9,1 0,-9 -6,-11 -13,-11 -7,0 -14,1 -20,5l0 -14c7,-3 15,-5 24,-5 16,0 29,7 29,25l0 23c0,5 0,9 1,14l0 0zm18 -115c0,9 5,14 11,14 7,0 12,-5 12,-13 0,-8 -5,-14 -12,-14 -7,0 -11,6 -11,13l0 0zm41 -53l0 48c3,-14 14,-21 28,-21 20,0 27,14 27,29l0 4 -37 0c1,7 7,10 16,10 5,0 11,-2 16,-4l0 13 0 89 -19 0 0 -11c-3,7 -12,12 -22,12 -18,0 -27,-14 -27,-32 0,-5 0,-9 2,-13 -1,-1 -2,-1 -3,-1 -10,0 -15,8 -15,19l0 26 -21 0 0 -61 19 0 0 12c4,-8 9,-13 18,-13 2,0 5,0 7,1l0 8c4,-5 10,-9 19,-9 8,0 15,2 21,9l0 -33c-14,-1 -26,-9 -29,-21l0 20 -17 0 0 -10c-2,6 -10,11 -18,11 -16,0 -24,-13 -24,-29 0,-3 0,-7 2,-11 -1,0 -2,0 -3,0 -8,0 -13,6 -13,17l0 22 -19 0 0 -53 17 0 0 10c3,-7 8,-11 16,-11 2,0 4,0 6,0l0 8c4,-5 9,-8 16,-8 8,0 14,2 19,8l0 -35 18 0zm4 137c0,10 4,16 12,16 7,0 13,-6 13,-15 0,-9 -5,-16 -13,-16 -8,0 -12,7 -12,15zm14 -87l21 0c0,-6 -3,-11 -10,-11 -7,0 -10,5 -11,11z"/>
+                            <path id="Combined-Shape_0" class="fil2 str0" d="M221 7c21,0 38,6 50,17 12,11 18,27 20,47l0 115 -212 0c-21,0 -38,-6 -50,-17 -12,-11 -18,-27 -20,-47l0 -115 212 0z"/>
+                        </g>
+                    </svg>
+                </div>
+
+                <ul class="menu"><!--Início caixa menu-->
+
+                     <li>
+
+                        <a href="dashboard.html">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/></svg>Assuntos não cadastrados
+                        </a>
+
+                    </li>
+
+                    <li>
+                            <a href="chatbot.html">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M160-120v-200q0-33 23.5-56.5T240-400h480q33 0 56.5 23.5T800-320v200H160Zm200-320q-83 0-141.5-58.5T160-640q0-83 58.5-141.5T360-840h240q83 0 141.5 58.5T800-640q0 83-58.5 141.5T600-440H360ZM240-200h480v-120H240v120Zm120-320h240q50 0 85-35t35-85q0-50-35-85t-85-35H360q-50 0-85 35t-35 85q0 50 35 85t85 35Zm0-80q17 0 28.5-11.5T400-640q0-17-11.5-28.5T360-680q-17 0-28.5 11.5T320-640q0 17 11.5 28.5T360-600Zm240 0q17 0 28.5-11.5T640-640q0-17-11.5-28.5T600-680q-17 0-28.5 11.5T560-640q0 17 11.5 28.5T600-600ZM480-200Zm0-440Z"/></svg></i>Chatbot
+                            </a>
+                    </li>
+
+                    <li>
+                        <a href="knowledge_library.html">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M560-564v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-600q-38 0-73 9.5T560-564Zm0 220v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-380q-38 0-73 9t-67 27Zm0-110v-68q33-14 67.5-21t72.5-7q26 0 51 4t49 10v64q-24-9-48.5-13.5T700-490q-38 0-73 9.5T560-454ZM260-320q47 0 91.5 10.5T440-278v-394q-41-24-87-36t-93-12q-36 0-71.5 7T120-692v396q35-12 69.5-18t70.5-6Zm260 42q44-21 88.5-31.5T700-320q36 0 70.5 6t69.5 18v-396q-33-14-68.5-21t-71.5-7q-47 0-93 12t-87 36v394Zm-40 118q-48-38-104-59t-116-21q-42 0-82.5 11T100-198q-21 11-40.5-1T40-234v-482q0-11 5.5-21T62-752q46-24 96-36t102-12q58 0 113.5 15T480-740q51-30 106.5-45T700-800q52 0 102 12t96 36q11 5 16.5 15t5.5 21v482q0 23-19.5 35t-40.5 1q-37-20-77.5-31T700-240q-60 0-116 21t-104 59ZM280-494Z"/></svg>Biblioteca do conhecimento
+                            </a>
+                    </li>
+
+                     <li>
+                        <a href="report.html">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M120-120v-80l80-80v160h-80Zm160 0v-240l80-80v320h-80Zm160 0v-320l80 81v239h-80Zm160 0v-239l80-80v319h-80Zm160 0v-400l80-80v480h-80ZM120-327v-113l280-280 160 160 280-280v113L560-447 400-607 120-327Z"/></svg>
+                            Relatórios
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="categories.html">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="m260-520 220-360 220 360H260ZM700-80q-75 0-127.5-52.5T520-260q0-75 52.5-127.5T700-440q75 0 127.5 52.5T880-260q0 75-52.5 127.5T700-80Zm-580-20v-320h320v320H120Zm580-60q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Zm-500-20h160v-160H200v160Zm202-420h156l-78-126-78 126Zm78 0ZM360-340Zm340 80Z"/></svg>
+                            Categorias
+                        </a>
+                    </li>
+
+                    
+                     <li class="selecionado">
+                        <a href="profiles.html"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm720 0v-120q0-44-24.5-84.5T666-434q51 6 96 20.5t84 35.5q36 20 55 44.5t19 53.5v120H760ZM360-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm400-160q0 66-47 113t-113 47q-11 0-28-2.5t-28-5.5q27-32 41.5-71t14.5-81q0-42-14.5-81T544-792q14-5 28-6.5t28-1.5q66 0 113 47t47 113ZM120-240h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0 320Zm0-400Z"/></svg>Perfis</a>
+                    </li>
+
+                
+                    <li>
+                            <a href="users.html">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M680-280q25 0 42.5-17.5T740-340q0-25-17.5-42.5T680-400q-25 0-42.5 17.5T620-340q0 25 17.5 42.5T680-280Zm0 120q31 0 57-14.5t42-38.5q-22-13-47-20t-52-7q-27 0-52 7t-47 20q16 24 42 38.5t57 14.5ZM480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v227q-19-8-39-14.5t-41-9.5v-147l-240-90-240 90v188q0 47 12.5 94t35 89.5Q310-290 342-254t71 60q11 32 29 61t41 52q-1 0-1.5.5t-1.5.5Zm200 0q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80ZM480-494Z"/></svg></i>Usuários
+                            </a>
+                    </li>
+
+                </ul><!--Fim caixa menu-->
+
+                <ul class="menu"><!--Início caixa menu-->
+
+                    <li>
+                        <a href="./profile.html">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z"/></svg>Perfil</i>
+                        </a>
+                    </li>
+
+                     <li>
+                        <a href="#" id="logout-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Zm-80-160-55-58 102-102H120v-80h327L345-622l55-58 200 200-200 200Z"/></svg>Sair
+                        </a>
+                    </li>
+
+                </ul><!--Fim caixa menu-->
+
+            </aside>
+            <main>
+                <section class="assuntos">
+
+                    <div class="user-management-controls">
+                        <button id="add-user-button" class="btn-add-user">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0-80Zm0 400Z"/></svg> Adicionar perfil
+                        </button>
+                    </div>
+
+                    <div class="user-table-container"> 
+                        
+                        <div id="profiles-cards-container">
+
+                        </div>
+                        <p id="no-users-message" style="text-align: center; color: var(--cor-fonte-fraca); display: none;">Nenhum perfil encontrado.</p>
+                    </div>
+
+                </section>
+            </main>
+        </div>
+        <div id="edit-user-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2>Editar perfil</h2>
+                <form id="edit-user-form">
+                    <input type="hidden" id="edit-user-id">
+
+                     <div class="textfield">
+                        <label for="edit-user-nome">Nome</label>
+                        <input type="text" id="edit-user-nome" required>
+                    </div>
+
+                    <div class="textfield">
+                        <label for="edit-user-descricao">Descrição</label>
+                        <textarea id="edit-user-descricao" rows="3"></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-save">Salvar</button>
+                        <button type="button" class="btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+         <script type="module" src="../js/profiles.js"></script>
+    </body>
+</html>

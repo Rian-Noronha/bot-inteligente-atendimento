@@ -1,0 +1,12 @@
+/backend/node_modules
+/backend/src/config/bot-atendimento-inteligente-firebase-adminsdk-fbsvc-68b6146799.json
+/front/node_modules
+/services/ai_service/venv/
+/services/ai_service/.venv/
+**/__pycache__/
+**/.env
+.DS_Store
+Thumbs.db
+
+.vite
+

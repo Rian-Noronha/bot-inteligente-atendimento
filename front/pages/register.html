@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tela de Cadastro</title>
+        <link rel="stylesheet" href="../css/style.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    </head>
+    <body>
+
+        <div class="main-register">
+            <form id="register-form" class="card-register">
+                <a href="./users.html" id="back-button" title="Voltar para a lista de Usuários">
+                    <i class="bi bi-arrow-left-circle"></i> Voltar
+                </a>
+
+                <h1>Cadastro</h1>
+
+                <div class="textfield">
+                    <label for="reg-nome">Nome</label>
+                    <input type="text" id="reg-nome" name="nome" placeholder="Nome completo" required>
+                </div>
+
+                <div class="textfield">
+                    <label for="reg-email">E-mail</label>
+                    <input type="email" id="reg-email" name="email" placeholder="email@exemplo.com" required>
+                </div>
+
+                <div class="textfield">
+                    <label for="reg-senha">Senha</label>
+                    <input type="password" id="reg-senha" name="password" placeholder="Mínimo de 6 caracteres" required minlength="6">
+                </div>
+
+                 <div class="textfield">
+                        <label for="reg-tipo-acesso">Tipo de Acesso</label>
+                        <select id="reg-tipo-acesso" name="tipo_acesso" required>
+                            <option value="" disabled selected>Carregando Perfis...</option>
+                        </select>
+                </div>
+
+                <button type="submit" class="btn-register" id="btn-cadastrar">Cadastrar</button>
+            
+            </form> <!-- Fim da tag <form> -->
+        </div>
+        
+        <script type="module" src="../js/register.js"></script>
+    </body>
+</html>
