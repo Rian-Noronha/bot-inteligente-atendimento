@@ -1,20 +1,60 @@
 const { Usuario, Perfil } = require('../models');
+const {Op} = require('sequelize');
+
+/**
+ * Busca usuários com paginação, filtro de busca e retorna metadados.
+ */
 exports.pegarTodosUsuarios = async (req, res) => {
-    try {
-        const usuarios = await Usuario.findAll({
-            attributes: { exclude: ['senha_hash'] },
+    try{
+        const {page = 1, limit = 10, search = ''} = req.query;
+
+        const pageInt = parseInt(page, 10);
+        const limitInt = parseInt(limit, 10);
+
+        const qtdItensPular = (pageInt - 1) * limitInt;
+
+        let whereClause = {};
+        if(search){
+            whereClause = {
+                [Op.or]: [
+                    { nome: { [Op.iLike]: `%${search}%` } },
+                    { email: { [Op.iLike]: `%${search}%` } }
+                ]
+            };
+        }
+
+        const {count, rows} = await Usuario.findAndCountAll({
+            where: whereClause,
+            limit: limitInt,
+            offset: qtdItensPular,
+            attributes: {exclude: ['senha_hash']},
             include: [{
                 model: Perfil,
                 as: 'perfil',
                 attributes: ['id', 'nome']
             }],
-            order: [['nome', 'ASC']]
+
+            order: [['nome', 'ASC']],
+            distinct: true
         });
-        res.status(200).json(usuarios);
-    } catch (error) {
-        res.status(500).json({ message: "Erro ao buscar usuários", error: error.message });
+
+        const totalPages = Math.ceil(count/limitInt);
+
+        res.status(200).json({
+            data: rows,
+            meta: {
+                totalItems: count,
+                itemsPerPage: limitInt,
+                currentPage: pageInt, 
+                totalPages: totalPages 
+            }
+        });
+
+    }catch(error){
+        res.status(500).json({message: "Erro ao buscar usuários", error: error.message});
     }
-};
+}
+
 
 exports.pegarUsuarioPorId = async (req, res) => {
     try {
