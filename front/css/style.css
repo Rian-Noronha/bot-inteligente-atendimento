@@ -2786,7 +2786,7 @@ body.upload-page {
 #profiles-cards-container {
     display: grid;
     /* Este é o segredo da responsividade automática */
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(333.33px, 1fr));
     gap: 20px;
     width: 100%;
 }
@@ -2867,7 +2867,7 @@ body.upload-page {
     color: var(--cor-fonte); /* Cor padronizada */
 }
 
-/* Estilo unificado para as "tags" de informação (Role e ID) */
+/* Estilo unificado para as "tags" de informação */
 .user-card .user-role,
 .profile-card .profile-id {
     background-color: var(--cor-verdeforte);
