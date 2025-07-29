@@ -20,8 +20,15 @@ export const apiUsuarioService = {
     /**
      * Busca todos os usuários.
      */
-    async pegarTodos() {
-        const response = await fetch(`/api/usuarios`, {
+    async pegarTodos(page = 1, limit = 10, search = '') {
+
+        const queryParams = new URLSearchParams({
+            page: page,
+            limit: limit,
+            search: search 
+        });
+
+        const response = await fetch(`/api/usuarios?${queryParams.toString()}`, {
             method: 'GET',
             headers: getAuthHeaders()
         });
