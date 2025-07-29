@@ -18,9 +18,13 @@ export const apiUsuarioService = {
     },
 
     /**
-     * Busca todos os usuários.
+     * Busca usuários com paginação e filtro.
+     * @param {number} page - O número da página.
+     * @param {number} limit - O número de itens por página.
+     * @param {string} search - O termo de busca.
+     * @returns {Promise<object>} - Um objeto contendo os dados e metadados da paginação.
      */
-    async pegarTodos(page = 1, limit = 10, search = '') {
+    async pegarPaginado(page = 1, limit = 10, search = '') {
 
         const queryParams = new URLSearchParams({
             page: page,
