@@ -35,11 +35,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextPageBtn = document.getElementById('next-page-btn');
     const pageInfo = document.getElementById('page-info');
 
+    const notificationContainer = document.getElementById('notification-container');
+    const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+    const confirmDeleteMessage = document.getElementById('confirm-delete-message');
+    const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+    const btnCancelDelete = document.getElementById('btn-cancel-delete');
+
+
     
     let currentPage = 1;
     let totalPages = 1;
     let currentSearchTerm = '';
     let itemsPerPage = 5;
+    let documentIdToDelete = null;
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+        setTimeout(() => { notification.remove(); }, 4500);
+    }
 
     
     if (hamburger && aside) {
@@ -65,6 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+
 
     // Função Debounce, espera o usuário parar de digitar por 300ms antes de fazer uma nova chamada à API 
     function debounce(func, delay) {
@@ -172,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const doc = await apiKnowledgeLibraryService.pegarPorId(docId);
             if (!doc) {
-                alert('Documento não encontrado.');
+                showNotification('Documento não encontrado.', 'error');
                 return;
             }
             editDocumentId.value = doc.id;
@@ -186,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
             editModal.style.display = 'flex';
             setTimeout(() => editModal.classList.add('active'), 10);
         } catch (error) {
-            alert(`Erro ao carregar dados do documento: ${error.message}`);
+            showNotification(`Erro ao carregar dados do documento: ${error.message}`, 'error');
         }
     }
     
@@ -197,16 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300);
     }
     
-    async function handleDeleteDocument(docId) {
-        if (!confirm('Tem certeza de que deseja excluir este documento?')) return;
-        try {
-            await apiKnowledgeLibraryService.deletar(docId);
-            alert('Documento excluído com sucesso!');
-            fetchAndRenderDocuments(); 
-        } catch (error) {
-            alert(`Erro ao excluir o documento: ${error.message}`);
-        }
-    }
     
     editForm.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -228,11 +236,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 palavrasChaveIds: palavrasChaveIds,
             };
             await apiKnowledgeLibraryService.atualizar(docId, updatedData);
-            alert('Documento atualizado com sucesso!');
+            showNotification('Documento atualizado com sucesso!', 'success');
             closeEditModal();
             fetchAndRenderDocuments();
         } catch (error) {
-            alert(`Erro ao atualizar o documento: ${error.message}`);
+            showNotification(`Erro ao atualizar o documento: ${error.message}`, 'error');
         }
     });
 
@@ -244,10 +252,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const deleteButton = event.target.closest('.btn-delete');
+         const deleteButton = event.target.closest('.btn-delete');
         if (deleteButton) {
-            handleDeleteDocument(parseInt(deleteButton.dataset.id, 10));
+            documentIdToDelete = parseInt(deleteButton.dataset.id, 10);
+            confirmDeleteMessage.textContent = 'Tem certeza de que deseja excluir este documento?';
+            confirmDeleteModal.style.display = 'flex';
         }
+    });
+
+    btnConfirmDelete.addEventListener('click', async () => {
+        if (documentIdToDelete === null) return;
+
+        try {
+            await apiKnowledgeLibraryService.deletar(documentIdToDelete);
+            showNotification('Documento excluído com sucesso!', 'success');
+            fetchAndRenderDocuments(); 
+        } catch (error) {
+            showNotification(`Erro ao excluir o documento: ${error.message}`, 'error');
+        } finally {
+            confirmDeleteModal.style.display = 'none';
+            documentIdToDelete = null;
+        }
+    });
+
+    btnCancelDelete.addEventListener('click', () => {
+        confirmDeleteModal.style.display = 'none';
+        documentIdToDelete = null;
     });
 
     // Event listeners dos controles 
