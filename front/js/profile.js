@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startSessionManagement();
 
-    
+   
     const hamburger = document.getElementById('hamburger');
     const aside = document.querySelector('aside');
     const profileForm = document.getElementById('profile-form');
@@ -17,12 +17,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const newPasswordInput = document.getElementById('new-password');
     const logoutButton = document.getElementById('logout-btn');
 
+   
+    const notificationContainer = document.getElementById('notification-container');
     
     let currentUser = null;
 
-   
-
     
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 4500);
+    }
+
     if (hamburger && aside) {
         hamburger.addEventListener('click', () => aside.classList.toggle('open'));
         document.addEventListener('click', (event) => {
@@ -31,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     
     if (logoutButton) {
         logoutButton.addEventListener('click', async (event) => {
@@ -48,35 +57,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Busca os dados do usuário logado na API e preenche o formulário.
-     */
     async function inicializarPagina() {
         try {
-            // Chama a API para buscar os dados do usuário do token
             currentUser = await apiAuthService.getMe();
             
             if (currentUser) {
                 nameInput.value = currentUser.nome;
                 emailInput.value = currentUser.email;
-                // O perfil agora vem aninhado no objeto
                 accessTypeInput.value = currentUser.perfil ? currentUser.perfil.nome : 'Não definido';
 
-                // Desabilita a troca de perfil se o usuário não for admin
                 if (!currentUser.perfil || currentUser.perfil.nome.toLowerCase() !== 'administrador') {
                     accessTypeInput.disabled = true;
                 }
             }
         } catch (error) {
-            // O handleResponseError no serviço de API já irá deslogar o usuário em caso de 401.
             console.error('Erro ao carregar dados do perfil:', error);
-            alert('Não foi possível carregar seus dados. Verifique sua conexão e tente novamente.');
+            showNotification('Não foi possível carregar seus dados. A sua sessão pode ter expirado.', 'error');
         }
     }
 
-    /**
-     * Lida com o envio do formulário, chamando as APIs de atualização.
-     */
     async function handleProfileUpdate(event) {
         event.preventDefault();
         
@@ -93,11 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
             submitButton.disabled = true;
             submitButton.textContent = 'Salvando...';
 
-            // 1. Atualiza os dados básicos (nome e e-mail)
-            // A rota de atualizar usuário é diferente da de atualizar senha
             await apiUsuarioService.atualizar(currentUser.id, updatedUserData);
             
-            // 2. Se o campo de nova senha foi preenchido, tenta atualizar a senha
             if (novaSenha) {
                 if (!senhaAtual) {
                     throw new Error('Para alterar a senha, você precisa fornecer sua senha atual.');
@@ -108,21 +104,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 await apiAuthService.updatePassword(senhaAtual, novaSenha);
             }
 
-            alert('Perfil atualizado com sucesso!');
-            // Limpa os campos de senha por segurança
+           
+            showNotification('Perfil atualizado com sucesso!', 'success');
+            
             currentPasswordInput.value = '';
             newPasswordInput.value = '';
 
         } catch (error) {
             console.error('Erro ao atualizar perfil:', error);
-            alert(`Falha na atualização: ${error.message}`);
+            showNotification(`Falha na atualização: ${error.message}`, 'error');
         } finally {
-            // Reabilita o botão ao final, com sucesso ou erro
             submitButton.disabled = false;
             submitButton.textContent = 'Salvar Alterações';
         }
     }
-
     
     inicializarPagina(); 
     profileForm.addEventListener('submit', handleProfileUpdate); 
