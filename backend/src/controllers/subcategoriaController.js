@@ -1,4 +1,5 @@
 const { Subcategoria, Categoria } = require('../models');
+
 /**
  * @description Busca todas as subcategorias que pertencem a uma categoria específica.
  * @param {string} req.params.categoriaId - O ID da categoria pai.
@@ -111,7 +112,16 @@ exports.deletarSubcategoria = async (req, res) => {
             res.status(404).json({ message: "Subcategoria não encontrada." });
         }
     } catch (error) {
-        res.status(500).json({ message: "Erro ao deletar subcategoria.", error: error.message });
+        
+               // CORREÇÃO: Verificando o código do erro do banco de dados para maior robustez
+        if (error.parent && (error.parent.code === '23503' || error.parent.code === '23502')) {
+            return res.status(409).json({ 
+                message: 'Não é possível excluir esta subcategoria, pois ela está a ser utilizada por documentos ou assuntos pendentes.' 
+            });
+        }
+        
+        console.error("ERRO INESPERADO AO DELETAR SUBCATEGORIA:", error);
+        res.status(500).json({ message: 'Erro ao deletar subcategoria.', error: error.message });
     }
 };
 

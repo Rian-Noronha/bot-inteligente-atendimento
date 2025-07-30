@@ -75,7 +75,16 @@ const {Categoria} = require('../models');
                 res.status(404).json({message: 'Categoria não encontrada.'});
             }
         }catch(error){
-            res.status(500).json({message: 'Erro ao deletar categoria.', error: error.message});
+
+            if (error.parent && (error.parent.code === '23503' || error.parent.code === '23502')) {
+                return res.status(409).json({ 
+                    message: 'Não é possível excluir esta categoria, pois ela está a ser utilizada por uma ou mais subcategorias.' 
+                });
+            }
+            
+            console.error("ERRO INESPERADO AO DELETAR CATEGORIA:", error);
+            res.status(500).json({ message: 'Erro ao deletar categoria.', error: error.message });
+        
         }
     }
 
