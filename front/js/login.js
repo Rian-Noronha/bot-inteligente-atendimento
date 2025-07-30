@@ -5,27 +5,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password'); 
     const loginStatusMessage = document.getElementById('login-status-message');
+    const formMessage = document.getElementById('form-message');
 
     // Limpa qualquer sessão antiga ao chegar na página de login para evitar erros "fantasma".
     localStorage.clear();
     sessionStorage.clear();
-    
+
+    const showMessage = (message, isError = false) => {
+        formMessage.textContent = message;
+        formMessage.style.color = isError? 'red' : '#333';
+        formMessage.style.display = 'block';
+    }
+
+    [emailInput, passwordInput].forEach(input => {
+        input.addEventListener('input', () => {
+            formMessage.style.display = 'none';
+        });
+    });
+
     loginForm.addEventListener('submit', async (event) => {
         event.preventDefault(); 
         const email = emailInput.value.trim();
         const password = passwordInput.value.trim();
         if (email === '' || password === '') {
-            alert('Por favor, preencha todos os campos.');
+            showMessage('Não deixe nenhum campo vazio:)', true);
             return;
         }
 
         try {
-            if (loginStatusMessage) {
-                loginStatusMessage.textContent = 'A autenticar...';
-                loginStatusMessage.style.color = '#333';
-                loginStatusMessage.style.display = 'block';
-            }
-
+            showMessage('Entrando no painel administrativo...');
+            
             // Chama a API para tentar fazer o login
             const loginData = await apiLoginService.login(email, password);
 
@@ -55,12 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Falha no login:', error);
-            if (loginStatusMessage) {
-                loginStatusMessage.textContent = error.message;
-                loginStatusMessage.style.color = 'red';
-            } else {
-                alert(error.message);
-            }
+            showMessage(error.message, true);
         }
     });
 });
