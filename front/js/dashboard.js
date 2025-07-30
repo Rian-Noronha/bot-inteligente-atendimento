@@ -22,9 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSimCadastrar = document.getElementById('btn-sim-cadastrar');
     const btnDeletarAssuntoPendente = document.getElementById('btn-deletar');
     const logoutButton = document.getElementById('logout-btn');
+    const notificationContainer = document.getElementById('notification-container');
     
    
     let assuntos = [];
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+        setTimeout(() => { notification.remove(); }, 4500);
+    }
 
     
 
@@ -147,19 +156,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- EVENT LISTENERS ESPECÍFICOS DA PÁGINA ---
-    btnDeletarAssuntoPendente.addEventListener('click', async () => {
+     btnDeletarAssuntoPendente.addEventListener('click', async () => {
         const assuntoId = parseInt(assuntoDecisaoIdInput.value);
-        if (confirm(`Tem certeza que deseja descartar este assunto?\n\n"${assuntoDecisaoPergunta.value}"`)) {
-            try {
-                await apiAssuntoPendenteService.deletarAssuntoPendente(assuntoId);
-                assuntos = assuntos.filter(a => a.id !== assuntoId); // Remove da lista local
-                alert(`Assunto descartado com sucesso.`);
-                closeAssuntoDecisaoModal();
-                applyFiltersAndLimits(); // Atualiza a tela
-            } catch (error) {
-                console.error('Erro ao descartar assunto:', error);
-                alert('Não foi possível descartar o assunto.');
-            }
+        
+        try {
+            await apiAssuntoPendenteService.deletarAssuntoPendente(assuntoId);
+            assuntos = assuntos.filter(a => a.id !== assuntoId); 
+            
+            showNotification(`Assunto excluído com sucesso.`, 'success');
+            
+            closeAssuntoDecisaoModal();
+            applyFiltersAndLimits(); // Atualiza a tela
+        } catch (error) {
+            console.error('Erro ao deletar assunto:', error);
+            showNotification('Não foi possível deletar o assunto.', 'error');
         }
     });
 
