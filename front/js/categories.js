@@ -216,18 +216,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (isOpening && !isLoaded) {
                 isLoading.style.display = 'block';
-                apiSubcategoriaService.pegarPorCategoriaId(categoryId)
-                    .then(subcategories => {
-                        renderSubcategories(list, subcategories);
-                        list.dataset.loaded = 'true';
-                    })
-                    .catch(error => {
-                        list.innerHTML = `<li class="error">Erro ao carregar subcategorias.</li>`;
-                    })
-                    .finally(() => {
-                        isLoading.style.display = 'none';
-                    });
+                try {
+                    const subcategories = await apiSubcategoriaService.pegarPorCategoriaId(categoryId);
+                    renderSubcategories(list, subcategories);
+                    list.dataset.loaded = 'true';
+                } catch (error) {
+                    list.innerHTML = `<li class="error">Erro ao carregar subcategorias.</li>`;
+                } finally {
+                    isLoading.style.display = 'none';
+                }
             }
+            
             return; // Encerra a função aqui para o toggle
         }
 
