@@ -6,6 +6,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const formContainer = document.getElementById('form-container');
     const confirmationContainer = document.getElementById('confirmation-container');
     const goToEmailBtn = document.getElementById('go-to-email-btn'); // Pega o novo botão
+    const formMessage = document.getElementById('form-message');
+    const isValidEmail = (email) => {
+        const emailRegex = new RegExp(
+            /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
+        );
+        return emailRegex.test(email);
+    };
+    const showFormMessage = (message, isError = true) => {
+        formMessage.textContent = message;
+        formMessage.style.color = isError ? '#ff5252' : '#008145'; // Vermelho para erro, verde para sucesso
+        formMessage.style.display = 'block';
+    };
+
 
     // Adiciona o listener ao formulário
     forgotPasswordForm.addEventListener('submit', async (event) => {
@@ -15,7 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = emailInput.value.trim();
 
         if (!email) {
-            alert('Por favor, insira seu endereço de e-mail.');
+            showFormMessage('Por favor, insira seu endereço de e-mail.');
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            showFormMessage('Por favor, insira um formato de e-mail válido.');
             return;
         }
 
@@ -60,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Falha ao solicitar recuperação de senha:', error);
-            alert(`Ocorreu um erro: ${error.message}`);
+            showFormMessage(`Ocorreu um erro: ${error.message}`);
             submitButton.disabled = false;
             submitButton.textContent = 'Enviar Link de Recuperação';
         }

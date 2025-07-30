@@ -2026,6 +2026,21 @@ body.upload-page {
     gap: 8px;
   }
 
+  .login-message-box {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.9em;
+    border: 1px solid transparent;
+}
+
+.login-message-box.info {
+    background-color: #eef7ff; /* Um azul claro */
+    border-color: #a7d5fd;
+    color: #0c548c;
+}
+
 
   .main-chatbot {
     flex-direction: column;

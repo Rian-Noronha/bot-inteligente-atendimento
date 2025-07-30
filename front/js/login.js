@@ -4,8 +4,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password'); 
-    const loginStatusMessage = document.getElementById('login-status-message');
     const formMessage = document.getElementById('form-message');
+    const loginMessageBox = document.getElementById('login-message-box');
+    const reasons = {
+        'inactivity': 'Sua sessão expirou por inatividade. Por favor, faça login novamente.',
+        'new_login': 'Sua sessão foi encerrada porque você se conectou em uma nova aba.',
+        'logged_out': 'Sua sessão foi encerrada em outra aba.',
+        'invalid_token': 'Sua sessão expirou ou é inválida. Por favor, faça o login novamente.'
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const reasonKey = urlParams.get('reason');
+
+    if (reasonKey && reasons[reasonKey]) {
+        loginMessageBox.textContent = reasons[reasonKey];
+        loginMessageBox.style.display = 'block'; // Torna a caixa de mensagem visível
+        // Adicione uma classe para estilização (ex: cor de fundo)
+        loginMessageBox.classList.add('info'); // ou 'error', dependendo do seu CSS
+    }
 
     // Limpa qualquer sessão antiga ao chegar na página de login para evitar erros "fantasma".
     localStorage.clear();

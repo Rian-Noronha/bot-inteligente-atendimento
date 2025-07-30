@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 });
 
 exports.enviarEmailRecuperacao = async (destinatario, token) => {
-    const resetUrl = `${process.env.FRONTEND_URL}/pages/reset-password.html?token=${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/pages/reset_password.html?token=${token}`;
 
     const mailOptions = {
         from: `"Verde Card" <${process.env.EMAIL_FROM}>`,

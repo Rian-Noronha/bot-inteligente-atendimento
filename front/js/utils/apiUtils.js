@@ -1,3 +1,5 @@
+import { logoutUser } from './sessionManager';
+
 /**
  * Cria e retorna os cabeçalhos de autenticação com o token JWT.
  * @returns {HeadersInit}
@@ -15,18 +17,13 @@ export function getAuthHeaders() {
 
 /**
  * Lida com erros de resposta da API de forma padronizada.
- * Se o erro for 401 (Não Autorizado), desloga o utilizador automaticamente.
+ * Se o erro for 401 (Não Autorizado), chama a função de logout centralizada.
  * Para outros erros, extrai a mensagem do servidor.
  */
 export async function handleResponseError(response) {
-    // CASO ESPECIAL: Se o token for inválido ou expirar, desloga o utilizador.
     if (response.status === 401) {
-        alert('Sua sessão expirou ou é inválida. Por favor, faça login novamente.');
-        // Limpa o estado local para evitar loops de erro
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = '../index.html';
-        throw new Error('Não autorizado.'); 
+        logoutUser('invalid_token');
+        throw new Error('Sessão inválida, redirecionando para o login.'); 
     }
     
     // PARA TODOS OS OUTROS ERROS (404, 409, 500, etc.):

@@ -8,10 +8,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
+    const formMessage = document.getElementById('form-message');
+    const notificationContainer = document.getElementById('notification-container');
+    const showFormMessage = (message, isError = false) => {
+        formMessage.textContent = message;
+        formMessage.style.color = isError ? 'red' : '#333';
+        formMessage.style.display = 'block';
+    };
+
+    const showNotification = (message, type = 'success') => {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+        setTimeout(() => { notification.remove(); }, 4500);
+    };
+
     // se não houver token, a página é inútil.
     if (!token) {
-        alert('Link de redefinição de senha inválido ou ausente. Por favor, solicite um novo.');
-        resetPasswordForm.innerHTML = "<h2>Token não encontrado na URL.</h2>";
+        showFormMessage('Link de redefinição inválido ou ausente.', true);
         setTimeout(() => { window.location.href = './esqueci-senha.html'; }, 3000);
         return; // Para a execução do restante do script
     }
@@ -19,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adiciona o listener ao formulário para lidar com o envio.
     resetPasswordForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+        formMessage.style.display = 'none';
 
         const newPasswordInput = document.getElementById('new-password');
         const confirmPasswordInput = document.getElementById('confirm-password');
@@ -27,8 +43,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitButton = resetPasswordForm.querySelector('button[type="submit"]');
 
         // Validação do lado do cliente
-        if (!newPassword || !confirmPassword || newPassword !== confirmPassword) {
-            alert('As senhas não conferem ou estão em branco. Tente novamente.');
+         if (newPassword.length < 6) {
+            showFormMessage('A nova senha deve ter no mínimo 6 caracteres.', true);
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showFormMessage('As senhas não conferem. Tente novamente.', true);
             return;
         }
 
@@ -38,14 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await apiAuthService.redefinirSenha(token, newPassword);
 
-            alert(data.message);
+           showNotification(data.message, 'success');
             setTimeout(() => {
                 window.location.href = '../index.html';
-            }, 1000);
+            }, 2000);
 
         } catch (error) {
             console.error('Falha ao redefinir senha:', error);
-            alert(`Erro: ${error.message}`);
+            showNotification(`Erro: ${error.message}`, 'error');
             submitButton.disabled = false;
             submitButton.textContent = 'Redefinir Senha';
         }
