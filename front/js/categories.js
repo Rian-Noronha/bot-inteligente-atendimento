@@ -34,9 +34,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const subcategoryNameInput = document.getElementById('subcategory-name');
     const subcategoryDescInput = document.getElementById('subcategory-description');
 
+    const notificationContainer = document.getElementById('notification-container');
+    const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+    const confirmDeleteMessage = document.getElementById('confirm-delete-message');
+    const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+    const btnCancelDelete = document.getElementById('btn-cancel-delete');
+    
     let categoriesOnCurrentPage = [];
     let currentPage = 1;
     let totalPages = 1;
+
+    let itemToDelete = null;
+
+     function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+        setTimeout(() => { notification.remove(); }, 4500);
+    }
 
     if (hamburger && aside) {
         hamburger.addEventListener('click', () => aside.classList.toggle('open'));
@@ -179,13 +195,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    categoryContainer.addEventListener('click', async (e) => {
+    categoryContainer.addEventListener('click', (e) => {
         const button = e.target.closest('.btn-action');
         if (!button) return;
 
         const accordionItem = button.closest('.accordion-item');
-        const categoryId = accordionItem.dataset.categoryId;
+        const categoryId = accordionItem ? accordionItem.dataset.categoryId : null;
 
+        // --- Ação: Expandir/Recolher Acordeão ---
         if (button.classList.contains('btn-toggle')) {
             const content = accordionItem.querySelector('.accordion-content');
             const list = content.querySelector('.subcategory-list');
@@ -199,40 +216,36 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (isOpening && !isLoaded) {
                 isLoading.style.display = 'block';
-                try {
-                    const subcategories = await apiSubcategoriaService.pegarPorCategoriaId(categoryId);
-                    renderSubcategories(list, subcategories);
-                    list.dataset.loaded = 'true';
-                } catch (error) {
-                    list.innerHTML = `<li class="error">Erro ao carregar subcategorias.</li>`;
-                } finally {
-                    isLoading.style.display = 'none';
-                }
+                apiSubcategoriaService.pegarPorCategoriaId(categoryId)
+                    .then(subcategories => {
+                        renderSubcategories(list, subcategories);
+                        list.dataset.loaded = 'true';
+                    })
+                    .catch(error => {
+                        list.innerHTML = `<li class="error">Erro ao carregar subcategorias.</li>`;
+                    })
+                    .finally(() => {
+                        isLoading.style.display = 'none';
+                    });
             }
+            return; // Encerra a função aqui para o toggle
         }
 
         const categoryData = categoriesOnCurrentPage.find(c => c.id == categoryId);
 
+        // --- Ações de Categoria ---
         if (button.classList.contains('btn-add-subcategory')) {
             openSubcategoryModal({ id: categoryId, nome: categoryData.nome });
-        }
-
-        if (button.classList.contains('btn-edit-category')) {
+        } else if (button.classList.contains('btn-edit-category')) {
             openCategoryModal(categoryData);
-        }
-
-        if (button.classList.contains('btn-delete-category')) {
-            if (confirm(`Tem certeza que deseja excluir a categoria "${categoryData.nome}" e TODAS as suas subcategorias?`)) {
-                try {
-                    await apiCategoriaService.deletar(categoryId);
-                    alert('Categoria excluída com sucesso!');
-                    fetchAndRenderCategories();
-                } catch(error) {
-                    alert(`Erro ao deletar: ${error.message}`);
-                }
-            }
+        } else if (button.classList.contains('btn-delete-category')) {
+            // Prepara para deletar a categoria
+            itemToDelete = { type: 'category', id: categoryId };
+            confirmDeleteMessage.textContent = `Tem certeza que deseja excluir a categoria "${categoryData.nome}" e TODAS as suas subcategorias?`;
+            confirmDeleteModal.style.display = 'flex';
         }
         
+        // --- Ações de Subcategoria ---
         const subcategoryItem = button.closest('li[data-subcategory-id]');
         if (subcategoryItem) {
             const subcategoryId = subcategoryItem.dataset.subcategoryId;
@@ -244,20 +257,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (button.classList.contains('btn-edit-subcategory')) {
                 openSubcategoryModal({ id: categoryId, nome: categoryData.nome }, subcategoryData);
-            }
-
-            if (button.classList.contains('btn-delete-subcategory')) {
-                if (confirm(`Tem certeza que deseja excluir a subcategoria "${subcategoryData.nome}"?`)) {
-                    try {
-                        await apiSubcategoriaService.deletar(subcategoryId);
-                        alert('Subcategoria excluída com sucesso!');
-                        subcategoryItem.remove();
-                    } catch(error) {
-                        alert(`Erro ao deletar: ${error.message}`);
-                    }
-                }
+            } else if (button.classList.contains('btn-delete-subcategory')) {
+                // Prepara para deletar a subcategoria
+                itemToDelete = { type: 'subcategory', id: subcategoryId, element: subcategoryItem };
+                confirmDeleteMessage.textContent = `Tem certeza que deseja excluir a subcategoria "${subcategoryData.nome}"?`;
+                confirmDeleteModal.style.display = 'flex';
             }
         }
+    });
+
+    btnConfirmDelete.addEventListener('click', async () => {
+        if (!itemToDelete) return;
+        
+        const { type, id, element } = itemToDelete;
+
+        try {
+            if (type === 'category') {
+                await apiCategoriaService.deletar(id);
+                showNotification('Categoria excluída com sucesso!', 'success');
+                fetchAndRenderCategories(); // Recarrega a lista de categorias
+            } else if (type === 'subcategory') {
+                await apiSubcategoriaService.deletar(id);
+                showNotification('Subcategoria excluída com sucesso!', 'success');
+                element.remove(); // Remove apenas o item da lista para uma UX mais rápida
+            }
+        } catch (error) {
+            showNotification(`Erro ao deletar: ${error.message}`, 'error');
+        } finally {
+            closeModal(confirmDeleteModal);
+            itemToDelete = null;
+        }
+    });
+
+    btnCancelDelete.addEventListener('click', () => {
+        closeModal(confirmDeleteModal);
+        itemToDelete = null;
     });
 
     addCategoryBtn.addEventListener('click', () => openCategoryModal());
@@ -269,11 +303,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = categoryIdInput.value;
         const data = { nome: categoryNameInput.value, descricao: categoryDescInput.value };
         try {
+            const message = id ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!';
             id ? await apiCategoriaService.atualizar(id, data) : await apiCategoriaService.criar(data);
+            showNotification(message, 'success');
             closeModal(categoryModal);
             fetchAndRenderCategories();
         } catch (error) {
-            alert('Erro ao salvar categoria: ' + error.message);
+            showNotification('Erro ao salvar categoria: ' + error.message, 'error');
         }
     });
 
@@ -286,19 +322,20 @@ document.addEventListener('DOMContentLoaded', () => {
             categoria_id: parentCategoryIdInput.value
         };
         try {
+            const message = id ? 'Subcategoria atualizada com sucesso!' : 'Subcategoria criada com sucesso!';
             id ? await apiSubcategoriaService.atualizar(id, data) : await apiSubcategoriaService.criar(data);
+            showNotification(message, 'success');
             closeModal(subcategoryModal);
+
+            // Força a recarga da lista de subcategorias na próxima vez que for aberta
             const accordionItem = document.querySelector(`.accordion-item[data-category-id="${data.categoria_id}"]`);
             if (accordionItem) {
                 const list = accordionItem.querySelector('.subcategory-list');
-                const content = accordionItem.querySelector('.accordion-content');
-                const icon = accordionItem.querySelector('.toggle-icon');
-                if(list) list.dataset.loaded = 'false';
-                if(content) content.style.display = 'none';
-                if(icon) icon.classList.remove('rotated');
+                list.dataset.loaded = 'false';
+                accordionItem.querySelector('.btn-toggle').click(); 
             }
         } catch (error) {
-            alert('Erro ao salvar subcategoria: ' + error.message);
+            showNotification('Erro ao salvar subcategoria: ' + error.message, 'error');
         }
     });
 

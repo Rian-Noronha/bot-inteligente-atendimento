@@ -147,47 +147,60 @@
             </main>
         </div>
         <div id="category-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h2 id="category-modal-title">Nova Categoria</h2>
-            <form id="category-form">
-                <input type="hidden" id="category-id">
-                <div class="textfield">
-                    <label for="category-name">Nome</label>
-                    <input type="text" id="category-name" required>
-                </div>
-                <div class="textfield">
-                    <label for="category-description">Descrição</label>
-                    <textarea id="category-description" rows="3"></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn-save">Salvar</button>
-                    <button type="button" class="btn-cancel">Cancelar</button>
-                </div>
-            </form>
+            <div class="modal-content">
+                <h2 id="category-modal-title">Nova Categoria</h2>
+                <form id="category-form">
+                    <input type="hidden" id="category-id">
+                    <div class="textfield">
+                        <label for="category-name">Nome</label>
+                        <input type="text" id="category-name" required>
+                    </div>
+                    <div class="textfield">
+                        <label for="category-description">Descrição</label>
+                        <textarea id="category-description" rows="3"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-save">Salvar</button>
+                        <button type="button" class="btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <div id="subcategory-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h2 id="subcategory-modal-title">Nova Subcategoria</h2>
-            <form id="subcategory-form">
-                <input type="hidden" id="subcategory-id">
-                <input type="hidden" id="parent-category-id">
-                <div class="textfield">
-                    <label for="subcategory-name">Nome</label>
-                    <input type="text" id="subcategory-name" required>
-                </div>
-                <div class="textfield">
-                    <label for="subcategory-description">Descrição</label>
-                    <textarea id="subcategory-description" rows="3"></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn-save">Salvar</button>
-                    <button type="button" class="btn-cancel">Cancelar</button>
-                </div>
-            </form>
+        <div id="subcategory-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 id="subcategory-modal-title">Nova Subcategoria</h2>
+                <form id="subcategory-form">
+                    <input type="hidden" id="subcategory-id">
+                    <input type="hidden" id="parent-category-id">
+                    <div class="textfield">
+                        <label for="subcategory-name">Nome</label>
+                        <input type="text" id="subcategory-name" required>
+                    </div>
+                    <div class="textfield">
+                        <label for="subcategory-description">Descrição</label>
+                        <textarea id="subcategory-description" rows="3"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-save">Salvar</button>
+                        <button type="button" class="btn-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
+
+        <div id="notification-container"></div>
+
+        <div id="confirm-delete-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <h2>Confirmar Exclusão</h2>
+                <p id="confirm-delete-message">Tem certeza que deseja continuar?</p>
+                <div class="modal-actions">
+                    <button id="btn-confirm-delete" class="btn-delete-confirm">Confirmar</button>
+                    <button id="btn-cancel-delete" class="btn-cancel">Cancelar</button>
+                </div>
+            </div>
+        </div>
        <script type="module" src="../js/categories.js"></script>
     </body>
 </html>
