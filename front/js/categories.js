@@ -298,9 +298,17 @@ document.addEventListener('DOMContentLoaded', () => {
     subcategoryModal.querySelector('.btn-cancel').addEventListener('click', () => closeModal(subcategoryModal));
 
     categoryForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+         e.preventDefault();
         const id = categoryIdInput.value;
-        const data = { nome: categoryNameInput.value, descricao: categoryDescInput.value };
+        const nome = categoryNameInput.value.trim();
+        const descricao = categoryDescInput.value.trim();
+
+        if (!nome) {
+            showNotification('O campo "Nome" é obrigatório.', 'error');
+            return; 
+        }
+
+        const data = { nome, descricao };
         try {
             const message = id ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!';
             id ? await apiCategoriaService.atualizar(id, data) : await apiCategoriaService.criar(data);
@@ -315,11 +323,21 @@ document.addEventListener('DOMContentLoaded', () => {
     subcategoryForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = subcategoryIdInput.value;
+        const nome = subcategoryNameInput.value.trim();
+        const descricao = subcategoryDescInput.value.trim();
+
+        
+        if (!nome) {
+            showNotification('O campo "Nome" é obrigatório.', 'error');
+            return; 
+        }
+        
         const data = { 
-            nome: subcategoryNameInput.value, 
-            descricao: subcategoryDescInput.value,
+            nome, 
+            descricao,
             categoria_id: parentCategoryIdInput.value
         };
+        
         try {
             const message = id ? 'Subcategoria atualizada com sucesso!' : 'Subcategoria criada com sucesso!';
             id ? await apiSubcategoriaService.atualizar(id, data) : await apiSubcategoriaService.criar(data);
