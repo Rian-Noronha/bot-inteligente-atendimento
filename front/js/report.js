@@ -20,7 +20,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const distribuicaoListEl = document.getElementById('distribuicao-list');
     const detalhamentoListEl = document.getElementById('report-results-list');
 
-    
+    const notificationContainer = document.getElementById('notification-container');
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 4500);
+    }
+
+
 
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
@@ -43,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderReport(kpis);
         } catch (error) {
             console.error('Erro ao gerar relatório:', error);
-            alert(`Falha ao buscar dados do relatório: ${error.message}`);
+            showNotification(`Falha ao buscar dados: ${error.message}`, 'error');
             renderReport(null);
         } finally {
             generateReportBtn.disabled = false;
