@@ -32,10 +32,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const editUserType = document.getElementById('edit-user-type');
     const btnCancel = editUserModal.querySelector('.btn-cancel');
 
+    const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+    const confirmDeleteMessage = document.getElementById('confirm-delete-message');
+    const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+    const btnCancelDelete = document.getElementById('btn-cancel-delete');
+    const notificationContainer = document.getElementById('notification-container');
+
     
     let usersOnCurrentPage = [];
     let currentPage = 1;
     let totalPages = 1;
+
+    let userIdToDelete = null;
+
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 4500); // Remove a notificação após 4.5 segundos
+    }
 
     if (hamburger && aside) {
         hamburger.addEventListener('click', () => aside.classList.toggle('open'));
@@ -201,18 +221,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await apiUsuarioService.atualizar(userId, updatedData);
-            alert('Utilizador atualizado com sucesso!');
+            showNotification('Utilizador atualizado com sucesso!', 'success');
             closeEditModal();
             fetchAndRenderUsers();
         } catch (error) {
-            alert(`Ocorreu um erro: ${error.message}`);
+           showNotification(`Ocorreu um erro: ${error.message}`, 'error');
         }
     });
 
-    userCardsContainer.addEventListener('click', async (event) => {
+    userCardsContainer.addEventListener('click', (event) => {
         const targetButton = event.target.closest('button');
         if (!targetButton) return;
-
         const userId = parseInt(targetButton.dataset.id);
         if (isNaN(userId)) return;
 
@@ -220,16 +239,30 @@ document.addEventListener('DOMContentLoaded', () => {
             openEditModal(userId);
         } else if (targetButton.classList.contains('btn-delete')) {
             const user = usersOnCurrentPage.find(u => u.id === userId);
-            if (confirm(`Tem certeza que deseja excluir o usuário "${user?.nome}"?`)) {
-                try {
-                    await apiUsuarioService.deletar(userId);
-                    alert('Utilizador excluído com sucesso!');
-                    fetchAndRenderUsers();
-                } catch (error) {
-                    alert(`Ocorreu um erro: ${error.message}`);
-                }
-            }
+            userIdToDelete = user.id; // Apenas guardamos o ID
+            confirmDeleteMessage.textContent = `Tem certeza que deseja excluir o usuário "${user?.nome}"? Esta ação não pode ser desfeita.`;
+            confirmDeleteModal.style.display = 'flex';
         }
+    });
+
+    btnConfirmDelete.addEventListener('click', async () => {
+        if (userIdToDelete === null) return; // Segurança extra
+
+        try {
+            await apiUsuarioService.deletar(userIdToDelete);
+            showNotification('Utilizador excluído com sucesso!', 'success');
+            fetchAndRenderUsers();
+        } catch (error) {
+            showNotification(`Ocorreu um erro: ${error.message}`, 'error');
+        } finally {
+            confirmDeleteModal.style.display = 'none'; // Esconde o modal
+            userIdToDelete = null; // Limpa o ID
+        }
+    });
+
+    btnCancelDelete.addEventListener('click', () => {
+        confirmDeleteModal.style.display = 'none';
+        userIdToDelete = null; // Limpa o ID para evitar exclusão acidental
     });
 
     if (addUserButton) {
@@ -237,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = './register.html';
         });
     }
+
     btnCancel.addEventListener('click', closeEditModal);
 
    
