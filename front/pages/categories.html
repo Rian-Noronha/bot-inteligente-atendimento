@@ -19,7 +19,7 @@
                 <div class="busca">
                     <div>
                         <form action="">
-                            <input type="text" id="user-search-input" placeholder="Pesquisar categorias...">
+                            <input type="text" id="category-search-input" placeholder="Pesquisar categorias...">
                             <button type="submit" title="Buscar">
                                 <i class="bi bi-search"></i>
                             </button>
@@ -27,8 +27,8 @@
                     </div>
                 </div>
                 <div class="items-per-page-simple">
-                    <label for="num-users-display" class="label-input-simple">Mostrar:</label>
-                    <input type="number" id="num-users-display" value="10" min="1" step="1" placeholder="Qtd. categorias">
+                    <label for="num-categories-display" class="label-input-simple">Mostrar:</label>
+                    <input type="number" id="num-categories-display" value="10" min="1" step="1" placeholder="Qtd. categorias">
                 </div>
             </header>
 
@@ -136,6 +136,12 @@
                 <div id="category-list-container" class="accordion-container">
                     </div>
                 <p id="loading-message" style="display: none;">Carregando...</p>
+                
+                <div id="pagination-controls" class="pagination-controls">
+                        <button id="prev-page-btn" class="btn-pagination" title="Página Anterior">&laquo; Anterior</button>
+                        <span id="page-info">Página 1 de 1</span>
+                        <button id="next-page-btn" class="btn-pagination" title="Próxima Página">Próximo &raquo;</button>
+                </div>
 
             </section>
             </main>
