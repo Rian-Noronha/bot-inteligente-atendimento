@@ -23,11 +23,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const stars = document.querySelectorAll('.star');
     const feedbackComment = document.getElementById('feedback-comment');
     const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+    const notificationContainer = document.getElementById('notification-container');
 
     let currentSessaoId = null;
     let currentRespostaId = null;
     let currentConsultaId = null;
     let currentRating = 0;
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 4500);
+    }
 
     
 
@@ -160,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const pergunta = inputPergunta.value.trim();
         const subcategoria_id = subthemeSelect.value;
         if (!pergunta || !subcategoria_id) {
-            alert("Por favor, selecione os temas e digite a sua pergunta.");
+            showNotification("Por favor, selecione os temas e digite a sua pergunta.", 'error');
             return;
         }
         
@@ -189,7 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (error) {
             console.error("Erro no fluxo de pergunta:", error);
-            answerArea.value = `Ocorreu um erro: ${error.message}`;
+           showNotification('Desculpe, ocorreu um erro ao buscar sua resposta. Tente novamente.', 'error');
+           answerArea.value = '';
         } finally {
             askButton.disabled = false;
         }
