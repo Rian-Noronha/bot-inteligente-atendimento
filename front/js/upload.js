@@ -19,12 +19,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const documentKeywordsInput = document.getElementById('document-keywords');
     const textSolutionTextarea = document.getElementById('text-solution');
     const arquivoInput = document.getElementById('arquivo-input');
+    const notificationContainer = document.getElementById('notification-container');
 
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
             e.preventDefault();
             logoutUser();
         });
+    }
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 4500);
     }
 
     async function popularTemas() {
@@ -118,13 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
             uploadStatus.textContent = 'Enviando para processamento da IA...';
             const resultado = await apiKnowledgeLibraryService.criar(dadosParaCriar);
 
-            alert(resultado.message || 'Operação concluída com sucesso!');
-            window.location.href = './knowledge_library.html';
+           showNotification(resultado.message || 'Operação concluída com sucesso!', 'success');
+           window.location.href = './knowledge_library.html';
 
         } catch (error) {
             console.error("Erro no envio:", error);
-            uploadStatus.textContent = `Erro: ${error.message}`;
-            uploadStatus.style.color = 'red';
+            showNotification(`Erro: ${error.message}`, 'error');
+            uploadStatus.textContent = '';
             uploadButton.disabled = false;
         }
     });
