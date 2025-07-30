@@ -196,6 +196,38 @@ body {
 
 }
 
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.input-wrapper input {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 15px 15px 15px 50px; 
+    background: var(--cor-chamativa);
+    color: #fff;
+    font-size: 12pt;
+    outline: none;
+    box-sizing: border-box;
+}
+
+
+.input-wrapper svg {
+    position: absolute;
+    left: 15px;
+    top: 50%; 
+    transform: translateY(-50%);
+    fill: #fff;
+    pointer-events: none;
+    transition: fill 0.2s ease-in-out;
+}
+
+.input-wrapper input:focus + svg {
+    fill: var(--cor-verdeforte);
+}
+
 .btn-login,
 .btn-register {
   width: 100%;
@@ -246,6 +278,8 @@ input::placeholder {
   text-decoration: none;
 
 }
+
+
 
 
 .main-chatbot {
