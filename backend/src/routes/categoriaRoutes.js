@@ -4,7 +4,8 @@ const categoriaController = require('../controllers/categoriaController');
 const { protect } = require('../middlewares/authMiddleware');
 const { isAdmin } = require('../middlewares/roleMiddleware');
 
-router.get('/', protect, categoriaController.pegarTodasCategorias);
+router.get('/', protect, categoriaController.pegarCategoriasPorPaginacao);
+router.get('/todas', protect, categoriaController.pegarTodasCategorias);
 router.get('/:id', protect, categoriaController.pegarCategoriaPorId);
 
 

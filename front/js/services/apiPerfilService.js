@@ -1,8 +1,20 @@
 import { getAuthHeaders, handleResponseError } from '../utils/apiUtils.js';
 
 export const apiPerfilService = {
+
+     /**
+     * Busca todos os perfis 
+     */
+    async pegarTodosPerfis() {
+        const response = await fetch(`/api/perfis/todos`, {
+            headers: getAuthHeaders() 
+        });
+        if (!response.ok) await handleResponseError(response);
+        return await response.json();
+    },
+
     /**
-     * Busca todos os perfis
+     * Busca todos os perfis por paginação
      */
     async pegarPaginado(page = 1, limit = 10, search = '') {
 

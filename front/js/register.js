@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      */
     async function carregarPerfis() {
         try {
-            const perfis = await apiPerfilService.pegarTodos();
+            const perfis = await apiPerfilService.pegarTodosPerfis();
             regTipoAcessoSelect.innerHTML = '<option value="" disabled selected>Selecione o Tipo de Acesso</option>';
             
             perfis.forEach(perfil => {

@@ -1,10 +1,19 @@
 const { Perfil } = require('../models');
 const {Op} = require('sequelize');
 
+exports.pegarTodosPerfis = async (req, res) => {
+        try {
+            const perfis = await Perfil.findAll();
+            res.status(200).json(perfis);
+        } catch (error) {
+            res.status(500).json({ message: 'Erro ao buscar perfis', error: error.message });
+        }
+};
+
 /**
  * Busca perfis com paginação e filtro de busca.
  */
-exports.pegarTodosPerfis = async (req, res) => {
+exports.pegarPerfisPorPaginacao = async (req, res) => {
     try {
         const { page = 1, limit = 10, search = '' } = req.query;
 

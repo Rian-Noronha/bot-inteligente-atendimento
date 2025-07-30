@@ -2,9 +2,21 @@ const {Categoria} = require('../models');
 const {Op} = require('sequelize');
 
 /**
- * Busca categorias com paginação e filtro de busca.
+ * Pegando todas as categorias.
  */
 exports.pegarTodasCategorias = async (req, res) => {
+    try{
+        const categorias = await Categoria.findAll();
+        res.status(200).json(categorias);
+    }catch(error){
+        res.status(500).json({message: 'Erro ao buscar categorias.', error: error.message});
+    }
+};
+
+/**
+ * Busca categorias com paginação e filtro de busca.
+ */
+exports.pegarCategoriasPorPaginacao = async (req, res) => {
     try {
         const { page = 1, limit = 10, search = '' } = req.query;
 

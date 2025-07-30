@@ -6,7 +6,8 @@ const { protect } = require('../middlewares/authMiddleware');
 const { isAdmin } = require('../middlewares/roleMiddleware');
 
 
-router.get('/', protect, isAdmin, perfilController.pegarTodosPerfis);
+router.get('/todos', protect, isAdmin, perfilController.pegarTodosPerfis);
+router.get('/', protect, isAdmin, perfilController.pegarPerfisPorPaginacao);
 router.get('/:id', protect, isAdmin, perfilController.pegarPerfilPorId);
 router.post('/', protect, isAdmin, perfilController.criarPerfil);
 router.put('/:id', protect, isAdmin, perfilController.atualizarPerfil);
