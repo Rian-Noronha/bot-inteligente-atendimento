@@ -1,8 +1,12 @@
 import { getAuthHeaders, handleResponseError } from '../utils/apiUtils.js';
 
 export const apiCategoriaService = {
-    async pegarTodasCategorias() {
-        const response = await fetch(`/api/categorias`, {
+    /**
+     * Busca categorias de forma paginada.
+     */
+    async pegarPaginada(page = 1, limit = 10, search = '') {
+        const queryParams = new URLSearchParams({ page, limit, search });
+        const response = await fetch(`/api/categorias?${queryParams.toString()}`, {
             method: 'GET',
             headers: getAuthHeaders()
         });
