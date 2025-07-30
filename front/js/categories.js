@@ -195,8 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    categoryContainer.addEventListener('click', (e) => {
-        const button = e.target.closest('.btn-action');
+    categoryContainer.addEventListener('click', async (event) => {
+        const button = event.target.closest('.btn-action');
         if (!button) return;
 
         const accordionItem = button.closest('.accordion-item');
@@ -226,8 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     isLoading.style.display = 'none';
                 }
             }
-            
-            return; // Encerra a função aqui para o toggle
+
+            return; 
         }
 
         const categoryData = categoriesOnCurrentPage.find(c => c.id == categoryId);
