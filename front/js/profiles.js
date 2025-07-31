@@ -1,21 +1,15 @@
 import { apiPerfilService } from './services/apiPerfilService.js';
-import { startSessionManagement } from './utils/sessionManager.js';
-import { apiAuthService } from './services/apiAuthService.js';
 import { showNotification } from './utils/notifications.js';
+import { inicializarUIComum } from './utils/uiComum.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    startSessionManagement();
+    inicializarUIComum();
 
-    
-    const hamburger = document.getElementById('hamburger');
-    const aside = document.querySelector('aside');
     const searchInput = document.getElementById('profile-search-input');
     const numProfilesDisplayInput = document.getElementById('num-profiles-display');
     const cardsContainer = document.getElementById('profiles-cards-container');
     const noProfilesMessage = document.getElementById('no-profiles-message');
     const addProfileButton = document.getElementById('add-profile-button');
-    const logoutButton = document.getElementById('logout-btn');
-
     
     const paginationControlsContainer = document.getElementById('pagination-controls');
     const prevPageBtn = document.getElementById('prev-page-btn');
@@ -43,33 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalPages = 1;
 
     let profileIdToDelete = null;
-
-    if (hamburger && aside) {
-        hamburger.addEventListener('click', () => aside.classList.toggle('open'));
-        document.addEventListener('click', (event) => {
-            if (aside.classList.contains('open') && !aside.contains(event.target) && !hamburger.contains(event.target)) {
-                aside.classList.remove('open');
-            }
-        });
-    }
-
-   
-    if (logoutButton) {
-        logoutButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            try {
-                await apiAuthService.logout();
-            } catch (error) {
-                console.error("Erro ao notificar o servidor sobre o logout:", error);
-            } finally {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '../index.html';
-            }
-        });
-    }
-
-    
 
     async function fetchAndRenderProfiles() {
         try {

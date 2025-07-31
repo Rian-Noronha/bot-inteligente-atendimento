@@ -1,24 +1,18 @@
 import { apiKnowledgeLibraryService } from './services/apiKnowledgeLibraryService.js';
 import { apiPalavraChaveService } from './services/apiPalavraChaveService.js';
-import { apiAuthService } from './services/apiAuthService.js';
-import { startSessionManagement } from './utils/sessionManager.js';
 import { showNotification } from './utils/notifications.js';
+import { inicializarUIComum } from './utils/uiComum.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    startSessionManagement();
+    inicializarUIComum();
 
-   
-    const hamburger = document.getElementById('hamburger');
-    const aside = document.querySelector('aside');
     const searchInput = document.getElementById('knowledge-library-search-input-header');
     const numDocumentsDisplayInput = document.getElementById('num-documents-display');
     const cardsContainer = document.getElementById('knowledge-library-cards-container');
     
     const noKnowledgeLibrarysMessage = document.getElementById('no-knowledge-librarys-message');
     const addKnowledgeLibraryButton = document.getElementById('add-knowledge-library-button');
-    const logoutButton = document.getElementById('logout-btn');
 
-   
     const editModal = document.getElementById('edit-document-modal');
     const editForm = document.getElementById('edit-document-form');
     const editDocumentId = document.getElementById('edit-document-id');
@@ -49,32 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSearchTerm = '';
     let itemsPerPage = 5;
     let documentIdToDelete = null;
-
-    if (hamburger && aside) {
-        hamburger.addEventListener('click', () => aside.classList.toggle('open'));
-        document.addEventListener('click', (event) => {
-            if (aside.classList.contains('open') && !aside.contains(event.target) && !hamburger.contains(event.target)) {
-                aside.classList.remove('open');
-            }
-        });
-    }
-
-    if (logoutButton) {
-        logoutButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            try {
-                await apiAuthService.logout();
-            } catch (error) {
-                console.error('Erro ao encerrar sessão no servidor:', error);
-            } finally {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '../index.html';
-            }
-        });
-    }
-
-
 
     // Função Debounce, espera o usuário parar de digitar por 300ms antes de fazer uma nova chamada à API 
     function debounce(func, delay) {

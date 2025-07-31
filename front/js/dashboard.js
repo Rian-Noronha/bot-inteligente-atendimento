@@ -1,15 +1,11 @@
 import { apiAssuntoPendenteService } from './services/apiAssuntoPendenteService.js';
-import { apiAuthService } from './services/apiAuthService.js';
-import { startSessionManagement } from './utils/sessionManager.js';
 import { showNotification } from './utils/notifications.js';
+import { inicializarUIComum } from './utils/uiComum.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    
-    startSessionManagement();
 
-   
-    const hamburger = document.getElementById('hamburger');
-    const aside = document.querySelector('aside');
+    inicializarUIComum();
+
     const searchInput = document.querySelector('header form input[type="text"]');
     const itemsPerPageInput = document.getElementById('num-items-display');
     const assuntosContainer = document.querySelector('section.assuntos > div');
@@ -22,37 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const assuntoDecisaoPergunta = document.getElementById('assunto-decisao-pergunta');
     const btnSimCadastrar = document.getElementById('btn-sim-cadastrar');
     const btnDeletarAssuntoPendente = document.getElementById('btn-deletar');
-    const logoutButton = document.getElementById('logout-btn');
     
-    
-   
     let assuntos = [];
 
-    // Lógica do Hamburger menu
-    if (hamburger && aside) {
-        hamburger.addEventListener('click', () => aside.classList.toggle('open'));
-        document.addEventListener('click', (event) => {
-            if (aside.classList.contains('open') && !aside.contains(event.target) && !hamburger.contains(event.target)) {
-                aside.classList.remove('open');
-            }
-        });
-    }
-
-    // Lógica do botão de logout
-    if (logoutButton) {
-        logoutButton.addEventListener('click', async (e) => {
-            e.preventDefault();
-            try {
-                await apiAuthService.logout();
-            } catch (error) {
-                console.error("Erro ao notificar o servidor sobre o logout:", error);
-            } finally {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '../index.html';
-            }
-        });
-    }
 
     // Função que cria o HTML de um card
     function createCardElement(assunto) {

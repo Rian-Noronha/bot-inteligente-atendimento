@@ -1,49 +1,20 @@
 import { apiAuthService } from './services/apiAuthService.js';
 import { apiUsuarioService } from './services/apiUsuarioService.js';
-import { startSessionManagement } from './utils/sessionManager.js';
 import { showNotification } from './utils/notifications.js';
 import { isValidEmail, validatePassword } from './utils/validators.js';
+import { inicializarUIComum } from './utils/uiComum.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    inicializarUIComum();
 
-    startSessionManagement();
-
-   
-    const hamburger = document.getElementById('hamburger');
-    const aside = document.querySelector('aside');
     const profileForm = document.getElementById('profile-form');
     const nameInput = document.getElementById('profile-name');
     const emailInput = document.getElementById('profile-email');
     const accessTypeInput = document.getElementById('profile-access-type');
     const currentPasswordInput = document.getElementById('current-password');
     const newPasswordInput = document.getElementById('new-password');
-    const logoutButton = document.getElementById('logout-btn');
-
-    let currentUser = null;
-
-    if (hamburger && aside) {
-        hamburger.addEventListener('click', () => aside.classList.toggle('open'));
-        document.addEventListener('click', (event) => {
-            if (aside.classList.contains('open') && !aside.contains(event.target) && !hamburger.contains(event.target)) {
-                aside.classList.remove('open');
-            }
-        });
-    }
     
-    if (logoutButton) {
-        logoutButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            try {
-                await apiAuthService.logout();
-            } catch (error) {
-                console.error("Erro ao notificar o servidor sobre o logout:", error);
-            } finally {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '../index.html';
-            }
-        });
-    }
+    let currentUser = null;
 
     async function inicializarPagina() {
         try {

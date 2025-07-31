@@ -1,21 +1,17 @@
 import { apiCategoriaService } from './services/apiCategoriaService.js';
 import { apiSubcategoriaService } from './services/apiSubcategoriaService.js';
-import { startSessionManagement } from './utils/sessionManager.js';
-import { apiAuthService } from './services/apiAuthService.js';
 import { showNotification } from './utils/notifications.js';
+import { inicializarUIComum } from './utils/uiComum.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    startSessionManagement();
+    inicializarUIComum();
 
-    const hamburger = document.getElementById('hamburger');
-    const aside = document.querySelector('aside');
     const searchInput = document.getElementById('category-search-input');
     const numDisplayInput = document.getElementById('num-categories-display');
     const categoryContainer = document.getElementById('category-list-container');
     const loadingMessage = document.getElementById('loading-message');
     const addCategoryBtn = document.getElementById('add-category-button');
-    const logoutButton = document.getElementById('logout-btn');
-
+    
     const paginationControlsContainer = document.getElementById('pagination-controls');
     const prevPageBtn = document.getElementById('prev-page-btn');
     const nextPageBtn = document.getElementById('next-page-btn');
@@ -45,32 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalPages = 1;
 
     let itemToDelete = null;
-
-
-    if (hamburger && aside) {
-        hamburger.addEventListener('click', () => aside.classList.toggle('open'));
-        document.addEventListener('click', (event) => {
-            if (aside.classList.contains('open') && !aside.contains(event.target) && !hamburger.contains(event.target)) {
-                aside.classList.remove('open');
-            }
-        });
-    }
-
-    if (logoutButton) {
-        logoutButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            try {
-                await apiAuthService.logout();
-            } catch (error) {
-                console.error("Erro ao notificar o servidor sobre o logout:", error);
-            } finally {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '../index.html';
-            }
-        });
-    }
-
 
     async function fetchAndRenderCategories() {
         loadingMessage.style.display = 'block';
