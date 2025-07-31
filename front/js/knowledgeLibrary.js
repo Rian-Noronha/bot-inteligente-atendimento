@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 search: currentSearchTerm
             });
 
-            totalPages = apiResponse.totalPages || 1;
+            totalPages = apiResponse.meta.totalPages || 1;
             renderDocuments(apiResponse.documentos);
             updatePaginationControls();
 

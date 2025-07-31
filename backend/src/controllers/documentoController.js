@@ -193,21 +193,6 @@ exports.pegarTodosDocumentos = async (req, res) => {
     const { page, limit, offset, search } = getPaginationParams(req.query);
     
     let whereClause = {};
-    const includeClause = [
-        {
-            model: Subcategoria,
-            as: 'subcategoria',
-            attributes: [],
-            include: [{ model: Categoria, as: 'categoria', attributes: [] }]
-        },
-        {
-            model: PalavraChave,
-            as: 'palavrasChave',
-            attributes: [],
-            through: { attributes: [] }
-        }
-    ];
-
     if (search) {
         const searchTerm = `%${search}%`;
         whereClause = {
@@ -222,6 +207,7 @@ exports.pegarTodosDocumentos = async (req, res) => {
         };
     }
 
+    // `findAndCountAll` de forma otimizada para contagem
     const { count, rows } = await Documento.findAndCountAll({
         where: whereClause,
         limit: limit,
@@ -232,16 +218,19 @@ exports.pegarTodosDocumentos = async (req, res) => {
                 model: Subcategoria,
                 as: 'subcategoria',
                 attributes: ['nome'],
-                include: [{ model: Categoria, as: 'categoria', attributes: ['nome'] }]
+                required: false, // LEFT JOIN para permitir busca em subcategorias e categorias
+                include: [{ model: Categoria, as: 'categoria', attributes: ['nome'], required: false }]
             },
             {
                 model: PalavraChave,
                 as: 'palavrasChave',
                 attributes: ['id', 'palavra'],
-                through: { attributes: [] }
+                through: { attributes: [] },
+                required: false // LEFT JOIN para permitir busca em palavras-chave
             }
         ],
-        order: [['id', 'DESC']]
+        order: [['id', 'DESC']],
+        distinct: true //count ser preciso com LEFT JOINs
     });
 
     const response = {
