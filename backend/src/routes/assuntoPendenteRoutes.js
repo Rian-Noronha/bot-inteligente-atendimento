@@ -6,7 +6,9 @@ const { isAdmin } = require('../middlewares/roleMiddleware');
 const asyncHandler = require('../utils/asyncHandler');
 
 
-router.get('/', protect, isAdmin, asyncHandler(assuntoPendenteController.pegarAssuntosPendentes));
+router.get('/', protect, isAdmin, asyncHandler(assuntoPendenteController.pegarAssuntosPendentesPaginado));
+router.get('/todos', protect, isAdmin, asyncHandler(assuntoPendenteController.pegarTodosAssuntosPendentes));
+
 
 router.post('/', protect, isAdmin, asyncHandler(assuntoPendenteController.criarAssuntoPendente));
 

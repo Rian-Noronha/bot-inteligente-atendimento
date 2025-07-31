@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemsPerPageInput = document.getElementById('num-items-display');
     const assuntosContainer = document.querySelector('section.assuntos > div');
 
+    const paginationControlsContainer = document.getElementById('pagination-controls');
+    const prevPageBtn = document.getElementById('prev-page-btn');
+    const nextPageBtn = document.getElementById('next-page-btn');
+    const pageInfoSpan = document.getElementById('page-info');
+
     
     const assuntoDecisaoModal = document.getElementById('assunto-decisao-modal');
     const assuntoDecisaoIdInput = document.getElementById('assunto-decisao-id');
@@ -19,7 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSimCadastrar = document.getElementById('btn-sim-cadastrar');
     const btnDeletarAssuntoPendente = document.getElementById('btn-deletar');
     
-    let assuntos = [];
+    let assuntosDaPaginaAtual = [];
+    let currentPage = 1;
+    let totalPages = 1;
 
 
     // Função que cria o HTML de um card
@@ -48,53 +55,54 @@ document.addEventListener('DOMContentLoaded', () => {
         return cardDiv;
     }
 
-    // Função que renderiza os cards na tela
-    function renderCards(cardsDataToDisplay) {
+    function renderCards(assuntos) {
         assuntosContainer.innerHTML = '';
-        if (cardsDataToDisplay.length === 0) {
-            assuntosContainer.innerHTML = '<p class="no-results">Nenhum assunto pendente para avaliação encontrado.</p>';
+        if (assuntos.length === 0) {
+            assuntosContainer.innerHTML = '<p class="no-results">Nenhum assunto pendente encontrado.</p>';
+            paginationControlsContainer.style.display = 'none';
         } else {
-            cardsDataToDisplay.forEach(assunto => {
+            assuntos.forEach(assunto => {
                 const cardElement = createCardElement(assunto);
                 assuntosContainer.appendChild(cardElement);
             });
+            paginationControlsContainer.style.display = 'flex';
         }
     }
 
-    // Função que busca os dados da API e inicia a renderização
+    // Função que renderiza os cards na tela
     async function fetchAndRenderAssuntos() {
         try {
-            assuntos = await apiAssuntoPendenteService.pegarTodosPendentes();
-            applyFiltersAndLimits();
+            const searchTerm = searchInput.value.trim();
+            const itemsPerPage = parseInt(itemsPerPageInput.value) || 9;
+
+            const response = await apiAssuntoPendenteService.pegarPaginado(currentPage, itemsPerPage, searchTerm);
+
+            assuntosDaPaginaAtual = response.data;
+            totalPages = response.meta.totalPages;
+
+            renderCards(assuntosDaPaginaAtual);
+            renderPaginationControls();
         } catch (error) {
             console.error('Erro ao buscar assuntos pendentes:', error);
             assuntosContainer.innerHTML = '<p class="no-results">Falha ao carregar dados do servidor.</p>';
         }
     }
 
-    // Função que aplica os filtros de busca e limite de exibição
-    function applyFiltersAndLimits() {
-        let currentFilteredAssuntos = [...assuntos];
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        if (searchTerm) {
-            currentFilteredAssuntos = currentFilteredAssuntos.filter(assunto => {
-                const tema = assunto.subcategoria?.categoria?.nome || '';
-                const microtema = assunto.subcategoria?.nome || '';
-                const pergunta = assunto.texto_assunto || '';
-                const fullText = `${tema} ${microtema} ${pergunta}`.toLowerCase();
-                return fullText.includes(searchTerm);
-            });
+    // Função para renderizar os controles de paginação
+    function renderPaginationControls() {
+        if (totalPages <= 1) {
+            paginationControlsContainer.style.display = 'none';
+            return;
         }
-        const itemsPerPage = parseInt(itemsPerPageInput.value);
-        if (!isNaN(itemsPerPage) && itemsPerPage > 0) {
-            currentFilteredAssuntos = currentFilteredAssuntos.slice(0, itemsPerPage);
-        }
-        renderCards(currentFilteredAssuntos);
+        paginationControlsContainer.style.display = 'flex';
+        pageInfoSpan.textContent = `Página ${currentPage} de ${totalPages}`;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
     }
 
     // Funções do Modal
     function openAssuntoDecisaoModal(assuntoId) {
-        const assunto = assuntos.find(a => a.id === assuntoId);
+        const assunto = assuntosDaPaginaAtual.find(a => a.id === assuntoId);
         if (assunto) {
             assuntoDecisaoIdInput.value = assunto.id;
             assuntoDecisaoCategoria.value = assunto.subcategoria?.categoria?.nome || '';
@@ -116,41 +124,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- EVENT LISTENERS ESPECÍFICOS DA PÁGINA ---
      btnDeletarAssuntoPendente.addEventListener('click', async () => {
-        const assuntoId = parseInt(assuntoDecisaoIdInput.value);
-        
+        const assuntoId = parseInt(document.getElementById('assunto-decisao-id').value);
         try {
             await apiAssuntoPendenteService.deletarAssuntoPendente(assuntoId);
-            assuntos = assuntos.filter(a => a.id !== assuntoId); 
-            
             showNotification(`Assunto excluído com sucesso.`, 'success');
-            
             closeAssuntoDecisaoModal();
-            applyFiltersAndLimits(); // Atualiza a tela
+            fetchAndRenderAssuntos(); 
         } catch (error) {
             console.error('Erro ao deletar assunto:', error);
             showNotification('Não foi possível deletar o assunto.', 'error');
         }
     });
 
-    // Listener para o botão de cadastrar (apenas redireciona)
     btnSimCadastrar.addEventListener('click', () => {
         closeAssuntoDecisaoModal();
     });
     
-    // Listener para abrir o modal ao clicar em um card
-    assuntosContainer.addEventListener('click', (event) => {
+     assuntosContainer.addEventListener('click', (event) => {
         const clickedCard = event.target.closest('.card');
         if (clickedCard) {
-            const assuntoId = parseInt(clickedCard.dataset.id);
+            const assuntoId = parseInt(clickedCard.dataset.id, 10);
             if (!isNaN(assuntoId)) openAssuntoDecisaoModal(assuntoId);
         }
     });
 
-    // Listeners de filtro
-    searchInput.addEventListener('input', applyFiltersAndLimits);
-    itemsPerPageInput.addEventListener('input', applyFiltersAndLimits);
-    assuntoDecisaoModal.addEventListener('click', (event) => { if (event.target === assuntoDecisaoModal) closeAssuntoDecisaoModal(); });
+    // Listeners de filtro e paginação
+    searchInput.addEventListener('input', () => {
+        currentPage = 1;
+        fetchAndRenderAssuntos();
+    });
+    itemsPerPageInput.addEventListener('input', () => {
+        currentPage = 1;
+        fetchAndRenderAssuntos();
+    });
 
+    
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            fetchAndRenderAssuntos();
+        }
+    });
+    nextPageBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            fetchAndRenderAssuntos();
+        }
+    });
+
+    assuntoDecisaoModal.addEventListener('click', (event) => {
+        if (event.target === assuntoDecisaoModal) {
+            closeAssuntoDecisaoModal();
+        }
+    });
     
     fetchAndRenderAssuntos();
 });

@@ -1,25 +1,48 @@
 const { AssuntoPendente, ChatConsulta, Subcategoria, Categoria } = require('../models'); // Importe o model Categoria também
 const { validarCamposObrigatorios } = require('../utils/validation');
+const { getPaginationParams, buildPaginationResponse } = require('../utils/pagination');
 
-//listar assuntos pendentes com subcategoria vinculada à sua categoria
-exports.pegarAssuntosPendentes = async (req, res) => {
+/**
+ * Busca todos os assuntos pendentes de forma PAGINADA.
+ * Ideal para a tela principal do dashboard.
+ */
+exports.pegarAssuntosPendentesPaginado = async (req, res) => {
+    const { page, limit, offset, search } = getPaginationParams(req.query);
+
+    let whereClause = {};
+    if (search) {
+        whereClause = {
+            [Op.or]: [
+                { texto_assunto: { [Op.iLike]: `%${search}%` } },
+                { '$subcategoria.nome$': { [Op.iLike]: `%${search}%` } },
+                { '$subcategoria.categoria.nome$': { [Op.iLike]: `%${search}%` } }
+            ]
+        };
+    }
+
+    const { count, rows } = await AssuntoPendente.findAndCountAll({
+        where: whereClause,
+        include: [
+            { model: Subcategoria, as: 'subcategoria', required: true, include: [{ model: Categoria, as: 'categoria', required: true }] }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: limit,
+        offset: offset,
+        distinct: true,
+        subQuery: false
+    });
+
+    const response = buildPaginationResponse(rows, count, page, limit);
+    res.status(200).json(response);
+};
+
+/**
+ * Busca TODOS os assuntos pendentes, sem paginação.
+ */
+exports.pegarTodosAssuntosPendentes = async (req, res) => {
     const assuntos = await AssuntoPendente.findAll({
         include: [
-            {
-                model: ChatConsulta,
-                as: 'consulta',
-                attributes: ['pergunta']
-            },
-            {
-                model: Subcategoria,
-                as: 'subcategoria',
-                attributes: ['id', 'nome'],
-                include: [{
-                    model: Categoria,
-                    as: 'categoria',
-                    attributes: ['nome']
-                }]
-            }
+            { model: Subcategoria, as: 'subcategoria', include: [{ model: Categoria, as: 'categoria' }] }
         ],
         order: [['createdAt', 'DESC']]
     });

@@ -2,12 +2,27 @@ import { getAuthHeaders, handleResponseError } from '../utils/apiUtils.js';
 
 export const apiAssuntoPendenteService = {
     /**
-     * Busca todos os assuntos pendentes.
+     * Busca assuntos pendentes com paginação e busca.
+     * Chama a rota: GET /api/assuntos-pendentes
+     * @param {number} page - O número da página.
+     * @param {number} limit - O número de itens por página.
+     * @param {string} search - O termo de busca.
      */
-    async pegarTodosPendentes() {
-        // 2. Usa um caminho relativo para o proxy do Vite funcionar
-        const response = await fetch(`/api/assuntos-pendentes`, {
-            method: 'GET',
+    async pegarPaginado(page = 1, limit = 10, search = '') {
+        const queryParams = new URLSearchParams({ page, limit, search });
+        const response = await fetch(`/api/assuntos-pendentes?${queryParams.toString()}`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) await handleResponseError(response);
+        return await response.json();
+    },
+
+    /**
+     * Busca TODOS os assuntos pendentes, sem paginação.
+     * Chama a rota: GET /api/assuntos-pendentes/todos
+     */
+    async pegarTodos() {
+        const response = await fetch(`/api/assuntos-pendentes/todos`, {
             headers: getAuthHeaders()
         });
         if (!response.ok) await handleResponseError(response);
