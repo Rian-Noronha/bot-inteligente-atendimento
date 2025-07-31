@@ -1,11 +1,12 @@
 import { apiUsuarioService } from './services/apiUsuarioService.js';
 import { apiPerfilService } from './services/apiPerfilService.js';
 import { startSessionManagement } from './utils/sessionManager.js';
+import { isValidEmail, validatePassword } from './utils/validators.js';
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     startSessionManagement();
 
-    
     const registerForm = document.getElementById('register-form'); // Assumindo que o form tem este ID
     const regNomeInput = document.getElementById('reg-nome');
     const regEmailInput = document.getElementById('reg-email');
@@ -30,8 +31,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         } catch (error) {
             console.error("Erro ao carregar perfis:", error);
-            alert("Não foi possível carregar os tipos de acesso. A página será recarregada.");
-            window.location.reload();
+            showNotification("Falha ao carregar perfis. A página será recarregada.", 'error');
+            setTimeout(() => window.location.reload(), 3000);
         }
     }
 
@@ -47,9 +48,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         const perfil_id = parseInt(regTipoAcessoSelect.value, 10);
 
         if (!nome || !email || !senha || isNaN(perfil_id)) {
-            alert('Por favor, preencha todos os campos obrigatórios.');
+            showNotification('Por favor, preencha todos os campos obrigatórios.', 'error');
             return;
         }
+
+        if (!isValidEmail(email)) {
+            showNotification('Por favor, insira um formato de e-mail válido.', 'error');
+            return;
+        }
+
+        const passwordValidation = validatePassword(senha);
+        if (!passwordValidation.isValid) {
+            showNotification(passwordValidation.message, 'error');
+            return;
+        }
+
         
         btnCadastrar.disabled = true;
         btnCadastrar.textContent = 'A cadastrar...';
@@ -58,16 +71,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const novoUsuario = { nome, email, senha, perfil_id, ativo: true };
             await apiUsuarioService.criar(novoUsuario);
 
-            alert('Usuário cadastrado com sucesso! A redirecionar para a lista de usuários.');
-            window.location.href = './users.html'; 
+            showNotification('Usuário cadastrado com sucesso! Redirecionando...', 'success');
+            setTimeout(() => {
+                window.location.href = './users.html'; 
+            }, 2000);
 
         } catch (error) {
             console.error('Erro ao cadastrar usuário:', error);
-            alert(`Erro ao cadastrar usuário: ${error.message}`);
-        } finally {
+            showNotification(`Erro ao cadastrar usuário: ${error.message}`, 'error');
             btnCadastrar.disabled = false;
             btnCadastrar.textContent = 'Cadastrar Usuário';
-        }
+        } 
     });
 
     // Listener para o botão de voltar

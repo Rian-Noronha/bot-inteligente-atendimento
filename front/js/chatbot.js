@@ -1,6 +1,7 @@
 import { apiChatService } from './services/apiChatService.js';
 import { apiCategoriaService } from './services/apiCategoriaService.js';
 import { startSessionManagement, logoutUser } from './utils/sessionManager.js';
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     startSessionManagement();
@@ -23,24 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const stars = document.querySelectorAll('.star');
     const feedbackComment = document.getElementById('feedback-comment');
     const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
-    const notificationContainer = document.getElementById('notification-container');
-
+    
     let currentSessaoId = null;
     let currentRespostaId = null;
     let currentConsultaId = null;
     let currentRating = 0;
-
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 4500);
-    }
-
-    
 
     function openFeedbackModal() {
         feedbackModal.style.display = 'flex';

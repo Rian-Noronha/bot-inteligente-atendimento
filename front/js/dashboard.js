@@ -1,6 +1,7 @@
 import { apiAssuntoPendenteService } from './services/apiAssuntoPendenteService.js';
 import { apiAuthService } from './services/apiAuthService.js';
 import { startSessionManagement } from './utils/sessionManager.js';
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -22,20 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSimCadastrar = document.getElementById('btn-sim-cadastrar');
     const btnDeletarAssuntoPendente = document.getElementById('btn-deletar');
     const logoutButton = document.getElementById('logout-btn');
-    const notificationContainer = document.getElementById('notification-container');
+    
     
    
     let assuntos = [];
-
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-        setTimeout(() => { notification.remove(); }, 4500);
-    }
-
-    
 
     // Lógica do Hamburger menu
     if (hamburger && aside) {

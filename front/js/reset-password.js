@@ -1,4 +1,6 @@
 import { apiAuthService } from './services/apiAuthService.js';
+import { validatePassword } from './utils/validators.js'; 
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -9,19 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = urlParams.get('token');
 
     const formMessage = document.getElementById('form-message');
-    const notificationContainer = document.getElementById('notification-container');
     const showFormMessage = (message, isError = false) => {
         formMessage.textContent = message;
         formMessage.style.color = isError ? 'red' : '#333';
         formMessage.style.display = 'block';
-    };
-
-    const showNotification = (message, type = 'success') => {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-        setTimeout(() => { notification.remove(); }, 4500);
     };
 
     // se não houver token, a página é inútil.
@@ -43,13 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitButton = resetPasswordForm.querySelector('button[type="submit"]');
 
         // Validação do lado do cliente
-         if (newPassword.length < 6) {
-            showFormMessage('A nova senha deve ter no mínimo 6 caracteres.', true);
+         const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.isValid) {
+            // Usando showNotification para consistência com as outras telas
+            showNotification(passwordValidation.message, 'error');
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            showFormMessage('As senhas não conferem. Tente novamente.', true);
+            showNotification('As senhas não conferem. Tente novamente.', 'error');
             return;
         }
 

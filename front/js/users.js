@@ -2,6 +2,8 @@ import { apiUsuarioService } from './services/apiUsuarioService.js';
 import { apiPerfilService } from './services/apiPerfilService.js';
 import { apiAuthService } from './services/apiAuthService.js';
 import { startSessionManagement } from './utils/sessionManager.js';
+import { isValidEmail } from './utils/validators.js';
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -44,18 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalPages = 1;
 
     let userIdToDelete = null;
-
-
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 4500); // Remove a notificação após 4.5 segundos
-    }
 
     if (hamburger && aside) {
         hamburger.addEventListener('click', () => aside.classList.toggle('open'));
@@ -219,6 +209,16 @@ document.addEventListener('DOMContentLoaded', () => {
             perfil_id: parseInt(editUserType.value)
         };
 
+        if (!updatedData.nome || !updatedData.email) {
+            showNotification('O nome e o e-mail são obrigatórios.', 'error');
+            return;
+        }
+
+        if (!isValidEmail(updatedData.email)) {
+            showNotification('Por favor, insira um formato de e-mail válido.', 'error');
+            return;
+        }
+
         try {
             await apiUsuarioService.atualizar(userId, updatedData);
             showNotification('Utilizador atualizado com sucesso!', 'success');
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             openEditModal(userId);
         } else if (targetButton.classList.contains('btn-delete')) {
             const user = usersOnCurrentPage.find(u => u.id === userId);
-            userIdToDelete = user.id; // Apenas guardamos o ID
+            userIdToDelete = user.id; // manter o ID
             confirmDeleteMessage.textContent = `Tem certeza que deseja excluir o usuário "${user?.nome}"? Esta ação não pode ser desfeita.`;
             confirmDeleteModal.style.display = 'flex';
         }

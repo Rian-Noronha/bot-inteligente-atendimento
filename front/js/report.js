@@ -1,5 +1,6 @@
 import { startSessionManagement, logoutUser } from './utils/sessionManager.js';
 import { apiReportService } from './services/apiReportService.js';
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     startSessionManagement();
@@ -20,20 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const distribuicaoListEl = document.getElementById('distribuicao-list');
     const detalhamentoListEl = document.getElementById('report-results-list');
 
-    const notificationContainer = document.getElementById('notification-container');
-
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 4500);
-    }
-
-
-
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
             e.preventDefault();
@@ -48,6 +35,24 @@ document.addEventListener('DOMContentLoaded', () => {
     startDateInput.value = defaultStartDate.toISOString().split('T')[0];
 
     async function generateReport() {
+            
+        const startDateValue = startDateInput.value;
+        const endDateValue = endDateInput.value;
+
+       
+        if (!startDateValue || !endDateValue) {
+            showNotification('Por favor, preencha tanto a data inicial quanto a final.', 'error');
+            return;
+        }
+
+        const startDate = new Date(startDateValue);
+        const endDate = new Date(endDateValue);
+
+        if (endDate < startDate) {
+            showNotification('A data final não pode ser anterior à data inicial.', 'error');
+            return;
+        }
+        
         try {
             generateReportBtn.disabled = true;
             generateReportBtn.textContent = 'Gerando...';
@@ -64,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     *  RENDERIZAÇÃO 100% SIMPLIFICADA
+     *  renderização ficou simplificada por receber um json bem estruturado do backend
      */
     function renderReport(kpis) {
         if (!kpis || kpis.performanceBot.totalConsultas === 0) {

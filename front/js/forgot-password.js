@@ -1,4 +1,5 @@
 import { apiAuthService } from "./services/apiAuthService.js";
+import { isValidEmail } from "./utils/validators.js";
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -7,12 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmationContainer = document.getElementById('confirmation-container');
     const goToEmailBtn = document.getElementById('go-to-email-btn'); // Pega o novo botão
     const formMessage = document.getElementById('form-message');
-    const isValidEmail = (email) => {
-        const emailRegex = new RegExp(
-            /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
-        );
-        return emailRegex.test(email);
-    };
+   
     const showFormMessage = (message, isError = true) => {
         formMessage.textContent = message;
         formMessage.style.color = isError ? '#ff5252' : '#008145'; // Vermelho para erro, verde para sucesso

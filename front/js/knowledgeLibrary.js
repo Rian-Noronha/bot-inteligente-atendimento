@@ -2,6 +2,7 @@ import { apiKnowledgeLibraryService } from './services/apiKnowledgeLibraryServic
 import { apiPalavraChaveService } from './services/apiPalavraChaveService.js';
 import { apiAuthService } from './services/apiAuthService.js';
 import { startSessionManagement } from './utils/sessionManager.js';
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     startSessionManagement();
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextPageBtn = document.getElementById('next-page-btn');
     const pageInfo = document.getElementById('page-info');
 
-    const notificationContainer = document.getElementById('notification-container');
+    
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
     const confirmDeleteMessage = document.getElementById('confirm-delete-message');
     const btnConfirmDelete = document.getElementById('btn-confirm-delete');
@@ -49,15 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let itemsPerPage = 5;
     let documentIdToDelete = null;
 
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-        setTimeout(() => { notification.remove(); }, 4500);
-    }
-
-    
     if (hamburger && aside) {
         hamburger.addEventListener('click', () => aside.classList.toggle('open'));
         document.addEventListener('click', (event) => {
@@ -235,6 +227,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 solucao: editDocumentSolution.readOnly ? undefined : editDocumentSolution.value.trim(),
                 palavrasChaveIds: palavrasChaveIds,
             };
+
+               
+            if (!updatedData.titulo) {
+                showNotification('O título do documento é obrigatório.', 'error');
+                return;
+            }
+            if (!updatedData.descricao) {
+                showNotification('A descrição do documento é obrigatória.', 'error');
+                return;
+            }
+           
+            if (!editDocumentSolution.readOnly && !updatedData.solucao) {
+                showNotification('A solução do documento é obrigatória.', 'error');
+                return;
+            }
+
             await apiKnowledgeLibraryService.atualizar(docId, updatedData);
             showNotification('Documento atualizado com sucesso!', 'success');
             closeEditModal();

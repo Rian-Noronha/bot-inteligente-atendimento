@@ -2,6 +2,7 @@ import { apiCategoriaService } from './services/apiCategoriaService.js';
 import { apiSubcategoriaService } from './services/apiSubcategoriaService.js';
 import { startSessionManagement } from './utils/sessionManager.js';
 import { apiAuthService } from './services/apiAuthService.js';
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     startSessionManagement();
@@ -34,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const subcategoryNameInput = document.getElementById('subcategory-name');
     const subcategoryDescInput = document.getElementById('subcategory-description');
 
-    const notificationContainer = document.getElementById('notification-container');
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
     const confirmDeleteMessage = document.getElementById('confirm-delete-message');
     const btnConfirmDelete = document.getElementById('btn-confirm-delete');
@@ -46,13 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let itemToDelete = null;
 
-     function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-        setTimeout(() => { notification.remove(); }, 4500);
-    }
 
     if (hamburger && aside) {
         hamburger.addEventListener('click', () => aside.classList.toggle('open'));
@@ -302,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = categoryIdInput.value;
         const nome = categoryNameInput.value.trim();
         const descricao = categoryDescInput.value.trim();
+        
 
         if (!nome) {
             showNotification('O campo "Nome" é obrigatório.', 'error');

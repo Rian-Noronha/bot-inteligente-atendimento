@@ -1,6 +1,8 @@
 import { apiAuthService } from './services/apiAuthService.js';
 import { apiUsuarioService } from './services/apiUsuarioService.js';
 import { startSessionManagement } from './utils/sessionManager.js';
+import { showNotification } from './utils/notifications.js';
+import { isValidEmail, validatePassword } from './utils/validators.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -17,21 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newPasswordInput = document.getElementById('new-password');
     const logoutButton = document.getElementById('logout-btn');
 
-   
-    const notificationContainer = document.getElementById('notification-container');
-    
     let currentUser = null;
-
-    
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 4500);
-    }
 
     if (hamburger && aside) {
         hamburger.addEventListener('click', () => aside.classList.toggle('open'));
@@ -88,27 +76,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const novaSenha = newPasswordInput.value;
         const submitButton = profileForm.querySelector('button[type="submit"]');
 
+       
+        if (!updatedUserData.nome || !updatedUserData.email) {
+            showNotification('Nome e e-mail são campos obrigatórios.', 'error');
+            return;
+        }
+
+        if (!isValidEmail(updatedUserData.email)) {
+            showNotification('Por favor, insira um formato de e-mail válido.', 'error');
+            return;
+        }
+
+        if (novaSenha) { 
+            if (!senhaAtual) {
+                showNotification('Para alterar a senha, você precisa fornecer sua senha atual.', 'error');
+                return;
+            }
+
+            const passwordValidation = validatePassword(novaSenha);
+            if (!passwordValidation.isValid) {
+                showNotification(passwordValidation.message, 'error');
+                return;
+            }
+        }
+
         try {
             submitButton.disabled = true;
             submitButton.textContent = 'Salvando...';
 
+            
             await apiUsuarioService.atualizar(currentUser.id, updatedUserData);
             
+            
             if (novaSenha) {
-                if (!senhaAtual) {
-                    throw new Error('Para alterar a senha, você precisa fornecer sua senha atual.');
-                }
-                if (novaSenha.length < 6) {
-                    throw new Error('A nova senha deve ter no mínimo 6 caracteres.');
-                }
                 await apiAuthService.updatePassword(senhaAtual, novaSenha);
             }
-
-           
+            
             showNotification('Perfil atualizado com sucesso!', 'success');
             
-            currentPasswordInput.value = '';
-            newPasswordInput.value = '';
+            
+            document.getElementById('current-password').value = '';
+            document.getElementById('new-password').value = '';
 
         } catch (error) {
             console.error('Erro ao atualizar perfil:', error);

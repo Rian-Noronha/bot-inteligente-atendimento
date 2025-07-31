@@ -1,4 +1,5 @@
 import { apiLoginService } from './services/apiLoginService.js';
+import { isValidEmail } from './utils/validators.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
@@ -43,8 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault(); 
         const email = emailInput.value.trim();
         const password = passwordInput.value.trim();
-        if (email === '' || password === '') {
-            showMessage('Não deixe nenhum campo vazio:)', true);
+        if (!email || !password) {
+            showMessage('Por favor, preencha os campos de e-mail e senha.', true);
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            showMessage('Por favor, insira um formato de e-mail válido.', true);
             return;
         }
 

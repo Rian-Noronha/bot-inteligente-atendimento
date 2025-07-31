@@ -3,6 +3,7 @@ import { apiPalavraChaveService } from './services/apiPalavraChaveService.js';
 import { apiKnowledgeLibraryService } from './services/apiKnowledgeLibraryService.js';
 import { storageService } from './services/storageService.js';
 import { startSessionManagement, logoutUser } from './utils/sessionManager.js';
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     startSessionManagement();
@@ -19,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const documentKeywordsInput = document.getElementById('document-keywords');
     const textSolutionTextarea = document.getElementById('text-solution');
     const arquivoInput = document.getElementById('arquivo-input');
-    const notificationContainer = document.getElementById('notification-container');
+    
 
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
@@ -28,15 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 4500);
-    }
 
     async function popularTemas() {
         try {

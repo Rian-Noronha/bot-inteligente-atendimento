@@ -1,6 +1,7 @@
 import { apiPerfilService } from './services/apiPerfilService.js';
 import { startSessionManagement } from './utils/sessionManager.js';
 import { apiAuthService } from './services/apiAuthService.js';
+import { showNotification } from './utils/notifications.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     startSessionManagement();
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editProfileDescricao = document.getElementById('edit-profile-descricao');
     const btnCancel = editModal.querySelector('.btn-cancel');
 
-    const notificationContainer = document.getElementById('notification-container');
+    
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
     const confirmDeleteMessage = document.getElementById('confirm-delete-message');
     const btnConfirmDelete = document.getElementById('btn-confirm-delete');
@@ -43,17 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let profileIdToDelete = null;
 
-     function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notificationContainer.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 4500);
-    }
-
-   
     if (hamburger && aside) {
         hamburger.addEventListener('click', () => aside.classList.toggle('open'));
         document.addEventListener('click', (event) => {
@@ -170,6 +160,16 @@ document.addEventListener('DOMContentLoaded', () => {
             nome: editProfileNome.value.trim(),
             descricao: editProfileDescricao.value.trim()
         };
+
+        if (!dados.nome) {
+            showNotification('O nome do perfil é obrigatório.', 'error');
+            return;
+        }
+
+        if (!dados.descricao) {
+            showNotification('Descrição é obrigatório.', 'error');
+            return;
+        }
 
         try {
             if (id) {
