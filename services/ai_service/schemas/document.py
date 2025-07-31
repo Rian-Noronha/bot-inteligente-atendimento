@@ -9,7 +9,6 @@ class ChatHistoryTurn(BaseModel):
 # Modelo para a requisição de pergunta ao chatbot
 class AskRequest(BaseModel):
     question: str
-    similarity_threshold: Optional[float] = Field(0.75, gt=0, le=1)
     top_k: Optional[int] = Field(3, gt=0, le=10) 
     sessao_id: Optional[int] = None,
     subcategoria_id: Optional[int] = None,

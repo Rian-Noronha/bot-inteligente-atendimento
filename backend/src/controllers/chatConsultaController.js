@@ -29,10 +29,12 @@ exports.criarConsultaEObterResposta = async (req, res) => {
                 pergunta, sessao_id, subcategoria_id
             }, { transaction: t });
 
+            const documentoFonteFinal = source_document_id === 0 ? null : source_document_id
+
             const novaResposta = await ChatResposta.create({
                 texto_resposta: answer,
                 consulta_id: novaConsulta.id,
-                documento_fonte: source_document_id,
+                documento_fonte: documentoFonteFinal,
                 url_fonte: source_document_url
             }, { transaction: t });
 
@@ -42,6 +44,7 @@ exports.criarConsultaEObterResposta = async (req, res) => {
                 answer: novaResposta.texto_resposta,
                 resposta_id: novaResposta.id,
                 consulta_id: novaConsulta.id,
+                source_document_id: source_document_id,
                 url_fonte: novaResposta.url_fonte,
                 titulo_fonte: source_document_title
             });
@@ -95,10 +98,12 @@ exports.criarConsultaEObterResposta = async (req, res) => {
         
         await redisClient.set(cacheKey, JSON.stringify(responseIA.data), { EX: 3600 });
         
+        const documentoFonteFinal = source_document_id === 0 ? null : source_document_id;
+
         const novaResposta = await ChatResposta.create({
             texto_resposta: answer,
             consulta_id: novaConsulta.id,
-            documento_fonte: source_document_id,
+            documento_fonte: documentoFonteFinal,
             url_fonte: source_document_url
         }, { transaction: t });
 
@@ -108,6 +113,7 @@ exports.criarConsultaEObterResposta = async (req, res) => {
             answer: answer,
             resposta_id: novaResposta.id,
             consulta_id: novaConsulta.id,
+            source_document_id: source_document_id,
             url_fonte: novaResposta.url_fonte,
             titulo_fonte: source_document_title
         });

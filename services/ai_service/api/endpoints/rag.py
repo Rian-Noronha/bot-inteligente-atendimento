@@ -1,199 +1,189 @@
 import traceback
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import text
+from sqlalchemy import text, Connection
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser 
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableLambda
 from schemas.document import AskRequest, RespostaFormatada
 from models.loader import embeddings_model, llm_principal
 from config.database import engine
 
 router = APIRouter()
-DEFAULT_HNSW_EF_SEARCH = 100
 SIMILARITY_THRESHOLD_FOR_CACHE = 0.95
 
-@router.post(
-    "/",
-    summary="Responde a uma pergunta usando Cache, Memória, Reescrita e RAG"
-)
+
+def _search_semantic_cache(question: str, connection: Connection):
+    """Busca por uma pergunta similar no cache semântico."""
+    print(f"Buscando no cache semântico para a pergunta: '{question}'")
+    embedding = embeddings_model.embed_query(question)
+    query = text("""
+        SELECT cr.texto_resposta, cr.url_fonte, d.titulo AS titulo_fonte,
+               (1 - (c.embedding <=> (:q_vector)::vector)) AS similarity
+        FROM chat_consultas c 
+        JOIN chat_respostas cr ON c.id = cr.consulta_id
+        LEFT JOIN documentos d ON cr.documento_fonte = d.id
+        WHERE c.embedding IS NOT NULL ORDER BY c.embedding <=> (:q_vector)::vector LIMIT 1;
+    """)
+    result = connection.execute(query, {"q_vector": embedding}).mappings().fetchone()
+    
+    if result and result['similarity'] > SIMILARITY_THRESHOLD_FOR_CACHE:
+        print(f"✅ CACHE SEMÂNTICO HIT! Similaridade: {result['similarity']:.4f}")
+        return result
+    if result:
+        print(f"CACHE SEMÂNTICO MISS. Similaridade: {result['similarity']:.4f}")
+    return None
+
+def _rewrite_question_with_history(request: AskRequest) -> str:
+    """Reescreve a pergunta usando o histórico, com uma função de limpeza para garantir robustez."""
+    if not request.chat_history:
+        return request.question
+
+    print("Histórico recebido. Re-escrevendo a pergunta...")
+    history = "\n".join([f"Operador: {turn.pergunta}\nIA: {turn.texto_resposta}" for turn in request.chat_history])
+    
+    # Usando o seu prompt original
+    rewrite_prompt = ChatPromptTemplate.from_template(
+        """Sua única tarefa é otimizar a 'Pergunta de Acompanhamento' de um operador para uma busca em uma base de conhecimento.
+
+            REGRAS:
+            1.  Se a 'Pergunta de Acompanhamento' já for uma pergunta clara e autossuficiente, sua resposta deve ser EXATAMENTE a pergunta original, sem adicionar ou remover nada.
+            2.  Se a 'Pergunta de Acompanhamento' for curta, ambígua ou depender do contexto (ex: "e sobre isso?", "qual o procedimento?"), use o 'Histórico da Conversa' para criar uma nova pergunta completa e específica.
+            3.  Sua saída deve conter APENAS e SOMENTE o texto da pergunta final. Não inclua NENHUMA outra palavra, explicação, ou formatação como "Pergunta Re-escrita:".
+
+            ---
+            Histórico da Conversa:
+            {chat_history}
+            ---
+            Pergunta de Acompanhamento:
+            {question}
+            ---
+            Pergunta Otimizada para Busca:"""
+    )
+    
+    # Função "limpadora" para garantir que a saída seja sempre uma única pergunta
+    def clean_llm_output(text_output: str) -> str:
+        lines = [line.strip() for line in text_output.splitlines() if line.strip()]
+        return lines[-1] if lines else text_output
+
+    chain = rewrite_prompt | llm_principal | StrOutputParser() | RunnableLambda(clean_llm_output)
+    rewritten_question = chain.invoke({"chat_history": history, "question": request.question})
+    
+    print(f"-> Pergunta Original: '{request.question}'")
+    print(f"-> Pergunta Re-escrita para busca: '{rewritten_question}'")
+    return rewritten_question
+
+def _perform_rag_retrieval(question: str, top_k: int, subcategoria_id: int | None, connection: Connection):
+    """Executa a busca RAG, sempre retornando os top_k melhores resultados, sem filtrar por score."""
+    print(f"Prosseguindo com RAG para '{question}' (top_k={top_k})")
+    embedding = embeddings_model.embed_query(question)
+    
+    params = {"q_vector": embedding, "top_k": top_k}
+    where_clauses = ["ativo = true"]
+    if subcategoria_id:
+        where_clauses.append("subcategoria_id = :sub_id")
+        params["sub_id"] = subcategoria_id
+
+    query_text = f"""
+        SELECT id, titulo, descricao, solucao, "urlArquivo", 
+               (1 - (embedding <=> (:q_vector)::vector)) AS similarity
+        FROM documentos
+        WHERE {' AND '.join(where_clauses)}
+        ORDER BY embedding <=> (:q_vector)::vector
+        LIMIT :top_k;
+    """
+    results = connection.execute(text(query_text), params).mappings().all()
+
+    if not results:
+        print("!!! RAG FALHOU: Nenhum documento encontrado.")
+        return None
+
+    print("\n--- Documentos Encontrados pelo RAG (com Scores) ---")
+    for doc in results:
+        print(f"  - ID: {doc['id']:<4} | Score: {doc['similarity']:.4f} | Título: '{doc['titulo']}'")
+    print("------------------------------------------------------\n")
+    return results
+
+def _generate_final_answer(context: str, question: str) -> RespostaFormatada:
+    """Usa o LLM para analisar o contexto e gerar a resposta final estruturada."""
+    print("Consolidando para análise pelo LLM.")
+    structured_llm = llm_principal.with_structured_output(RespostaFormatada)
+    
+    generation_prompt = ChatPromptTemplate.from_template(
+    """Você é um assistente especialista e sua única função é extrair respostas literais dos 'Documentos de Referência' para responder à 'Pergunta do Operador'.
+
+        REGRAS FUNDAMENTAIS:
+        1.  **SEJA LITERAL:** Sua resposta deve ser baseada **exclusivamente** no texto fornecido. Não interprete, resuma ou adicione informações que não estejam escritas.
+        2.  **SIGA A ORDEM:** Se um procedimento descrito no documento tem vários passos (ex: "primeiramente, faça X", "depois, faça Y"), sua resposta DEVE começar pelo primeiro passo. Não pule etapas.
+        3.  **RESPOSTA DIRETA:** Encontre a seção do documento que responde diretamente à pergunta e use a informação de lá.
+        4.  **CASO DE FALHA:** Se, e somente se, nenhum documento contiver a informação necessária, use a resposta padrão: "Não encontrei uma resposta para esta pergunta na base de conhecimento."
+
+        FORMATO DE SAÍDA OBRIGATÓRIO:
+        Sua resposta final DEVE usar a ferramenta `RespostaFormatada` com os seguintes campos:
+        - `resposta_texto`: O texto da resposta que você formulou, seguindo as regras acima.
+        - `id_fonte`: O ID do documento que você usou para a resposta. Se a regra 4 for aplicada, use o ID 0. **Este valor deve ser sempre um número inteiro (integer), nunca uma string com aspas.**
+
+        ---
+        Documentos de Referência:
+        {context}
+        ---
+        Pergunta do Operador:
+        {question}"""
+    )
+    chain = generation_prompt | structured_llm
+    return chain.invoke({"context": context, "question": question})
+
+
+
+@router.post("/", summary="Responde a uma pergunta usando Cache, Memória, Reescrita e RAG")
 async def ask_question(request: AskRequest):
-    """
-    Recebe uma pergunta e o histórico da conversa, aplica a lógica de reescrita
-    e busca na base de conhecimento para gerar uma resposta formatada.
-    """
     try:
         with engine.begin() as connection:
-            # --- ETAPA 1: BUSCA NO CACHE SEMÂNTICO ---
-            initial_question_embedding = embeddings_model.embed_query(request.question)
-            
-            connection.execute(
-                text("SET LOCAL hnsw.ef_search = :ef_search"),
-                {"ef_search": DEFAULT_HNSW_EF_SEARCH}
-            )
-
-            print(f"Buscando no cache semântico para a pergunta: '{request.question}'")
-            similar_question_query = text("""
-                SELECT 
-                    cr.texto_resposta, cr.url_fonte, d.titulo AS titulo_fonte,
-                    (1 - (c.embedding <=> (:query_vector)::vector)) AS similarity
-                FROM chat_consultas c 
-                JOIN chat_respostas cr ON c.id = cr.consulta_id
-                LEFT JOIN documentos d ON cr.documento_fonte = d.id
-                WHERE c.embedding IS NOT NULL 
-                ORDER BY c.embedding <=> (:query_vector)::vector 
-                LIMIT 1;
-            """)
-            cached_result = connection.execute(
-                similar_question_query,
-                {"query_vector": initial_question_embedding}
-            ).mappings().fetchone()
-
-            if cached_result and cached_result['similarity'] > SIMILARITY_THRESHOLD_FOR_CACHE:
-                print(f"✅ CACHE SEMÂNTICO HIT! Similaridade: {cached_result['similarity']:.4f}")
+            # Etapa 1: Tentar responder com o cache
+            cached_response = _search_semantic_cache(request.question, connection)
+            if cached_response:
                 return {
-                    "answer": cached_result['texto_resposta'],
-                    "source_document_id": None,
-                    "source_document_url": cached_result['url_fonte'],
-                    "source_document_title": cached_result['titulo_fonte']
+                    "answer": cached_response['texto_resposta'], "source_document_id": None,
+                    "source_document_url": cached_response['url_fonte'], "source_document_title": cached_response['titulo_fonte']
                 }
-            
-            if cached_result:
-                print(f"CACHE SEMÂNTICO MISS. Similaridade: {cached_result['similarity']:.4f}")
-            else:
-                print("CACHE SEMÂNTICO MISS.")
 
-            # --- ETAPA 2 e 2.5: MEMÓRIA E REESCRITA DA PERGUNTA ---
-            rewritten_question = request.question
-            
-            # Utiliza o histórico recebido diretamente do payload do Node.js
-            if request.chat_history:
-                formatted_history = []
-                for turn in request.chat_history:
-                    formatted_history.append(f"Operador: {turn.pergunta}")
-                    formatted_history.append(f"IA: {turn.texto_resposta}")
-                chat_history = "\n".join(formatted_history)
-                
-                print(f"Histórico recebido do Node.js. Re-escrevendo a pergunta...")
-                
-                rewrite_prompt = ChatPromptTemplate.from_template(
-                    """A sua tarefa é refinar a 'Pergunta de Acompanhamento' de um operador para uma busca.
+            # Etapa 2: Reescrever a pergunta com base no histórico
+            final_question = _rewrite_question_with_history(request)
 
-                    **Regra Principal:** Se a 'Pergunta de Acompanhamento' já for uma pergunta clara e completa, a sua resposta deve ser EXATAMENTE a 'Pergunta de Acompanhamento', sem qualquer alteração.
-
-                    **Regra Secundária:** Se a pergunta for curta ou ambígua (ex: "e a solução?"), use o 'Histórico da Conversa' para criar uma pergunta completa, combinando o tópico anterior com a pergunta atual.
-
-                    **REGRA DE SAÍDA CRÍTICA:** A sua resposta deve conter APENAS o texto da pergunta final. Não inclua explicações, prefixos, ou o seu processo de raciocínio.
-
-                    ---
-                    **Exemplo 1 (Pergunta já completa):**
-                    Histórico da Conversa:
-                    Operador: qual o motivo do bloqueio por spc?
-                    IA: É aplicado quando o cliente tem restrição no CPF.
-                    Pergunta de Acompanhamento: qual o procedimento para o bloqueio jurídico?
-                    Pergunta Re-escrita: qual o procedimento para o bloqueio jurídico?
-
-                    **Exemplo 2 (Pergunta curta):**
-                    Histórico da Conversa:
-                    Operador: Motivo de Suspensão de crédito?
-                    IA: Ocorre por inatividade ou atrasos pontuais.
-                    Pergunta de Acompanhamento: qual a solução?
-                    Pergunta Re-escrita: Qual a solução para a suspensão de crédito?
-                    ---
-
-                    **Dados Atuais:**
-
-                    Histórico da Conversa:
-                    {chat_history}
-                    ---
-                    Pergunta de Acompanhamento: {question}
-                    ---
-                    Pergunta Re-escrita:"""
-                )
-                
-                rewrite_chain = rewrite_prompt | llm_principal | StrOutputParser()
-                
-                rewritten_question = rewrite_chain.invoke({
-                    "chat_history": chat_history,
-                    "question": request.question
-                })
-                print(f"-> Pergunta Original: '{request.question}'")
-                print(f"-> Pergunta Re-escrita para busca: '{rewritten_question}'")
-
-            # --- ETAPA 3: BUSCA RAG ---
-            rag_question_embedding = embeddings_model.embed_query(rewritten_question)
-            
-            print(f"Prosseguindo com RAG para '{rewritten_question}' (top_k={request.top_k})")
-            
-            rag_query_parts = [
-                """SELECT id, titulo, descricao, solucao, "urlArquivo", 
-                   (1 - (embedding <=> (:query_vector)::vector)) AS similarity
-                   FROM documentos"""
-            ]
-            
-            where_clauses = ["ativo = true"]
-            query_params = {
-                "query_vector": rag_question_embedding,
-                "similarity_threshold": request.similarity_threshold,
-                "top_k": request.top_k
-            }
-
-            if request.subcategoria_id is not None:
-                where_clauses.append("subcategoria_id = :subcategoria_id")
-                query_params["subcategoria_id"] = request.subcategoria_id
-            
-            where_clauses.append("(1 - (embedding <=> (:query_vector)::vector)) > :similarity_threshold")
-            
-            rag_query_parts.append(f"WHERE {' AND '.join(where_clauses)}")
-            rag_query_parts.append("ORDER BY embedding <=> (:query_vector)::vector")
-            rag_query_parts.append("LIMIT :top_k;")
-            rag_query_text = " ".join(rag_query_parts)
-
-            rag_results = connection.execute(text(rag_query_text), query_params).mappings().all()
-
+            # Etapa 3: Buscar documentos relevantes (RAG)
+            rag_results = _perform_rag_retrieval(final_question, request.top_k, request.subcategoria_id, connection)
             if not rag_results:
-                print("!!! RAG FALHOU: Nenhum documento encontrado.")
                 return {"answer": "Desculpe, não encontrei nenhuma informação sobre isso.", "source_document_id": None, "source_document_url": None, "source_document_title": None}
 
-            print("\n--- Documentos Encontrados pelo RAG (com Scores) ---")
-            for doc in rag_results:
-                print(f"  - ID: {doc['id']:<4} | Score: {doc['similarity']:.4f} | Título: '{doc['titulo']}'")
-            print("------------------------------------------------------\n")
+            # Etapa 4: Gerar a resposta final com base nos documentos
+            context = "\n".join([f"Contexto (ID: {doc['id']}): Título: '{doc['titulo']}'. Solução: {doc['solucao']}" for doc in rag_results])
+            llm_output = _generate_final_answer(context, final_question)
             
+            # Etapa 5: Formatar e retornar a resposta
+            if llm_output.id_fonte == 0:
+                print("Resposta final gerada. Nenhuma fonte relevante encontrada.")
+                return {
+                    "answer": llm_output.resposta_texto,
+                    "source_document_id": 0,
+                    "source_document_url": None,
+                    "source_document_title": "Nenhuma fonte encontrada"
+                }
             
-            # --- ETAPA 4: GERAÇÃO DE RESPOSTA COM STRUCTURED OUTPUT ---
-            print(f"Encontrados {len(rag_results)} documentos. Consolidando para análise pelo LLM.")
-            formatted_contexts = []
-            for i, doc in enumerate(rag_results):
-                context_str = f"Contexto {i+1} (ID: {doc['id']}): Título: '{doc['titulo']}'. Solução: {doc['solucao']}"
-                formatted_contexts.append(context_str)
-            full_context = "\n".join(formatted_contexts)
 
-            structured_llm = llm_principal.with_structured_output(RespostaFormatada)
+            source_doc = next((doc for doc in rag_results if doc['id'] == llm_output.id_fonte), rag_results[0])
             
-            rerank_prompt = ChatPromptTemplate.from_template(
-                """A sua tarefa é analisar os 'Contextos' para responder à 'Pergunta Atual'. Use a ferramenta `RespostaFormatada`.
-                1. Analise todos os contextos.
-                2. Com base no contexto mais relevante, formule uma resposta clara.
-                3. Se nenhum for relevante, responda que não encontrou a informação.
-                4. Preencha os campos da ferramenta `RespostaFormatada` com o texto da resposta e o ID do documento fonte. Use 0 como ID se nenhum for relevante.
-                Contextos: {context}
-                Pergunta Atual: {question}"""
-            )
-
-            chain = rerank_prompt | structured_llm
-            llm_output_obj = chain.invoke({"context": full_context, "question": rewritten_question})
-
-            # --- ETAPA 5: PROCESSAMENTO E RETORNO ---
-            final_answer = llm_output_obj.resposta_texto
-            source_id = llm_output_obj.id_fonte
-
-            # Lógica para encontrar o documento fonte, com fallback para o primeiro resultado do RAG
-            source_doc = next((doc for doc in rag_results if doc['id'] == source_id), rag_results[0])
+            if not source_doc:
+                print(f"ALERTA: LLM retornou ID de fonte ({llm_output.id_fonte}) que não foi encontrado nos resultados do RAG.")
+                # Retorna a resposta do LLM, mas sem link de fonte.
+                return {
+                    "answer": llm_output.resposta_texto,
+                    "source_document_id": llm_output.id_fonte,
+                    "source_document_url": None,
+                    "source_document_title": "Fonte não localizada"
+                }
             
             print(f"Resposta final gerada. Fonte escolhida: ID {source_doc['id']}")
-            
-            # A responsabilidade de salvar o histórico agora é do Node.js
             return {
-                "answer": final_answer,
+                "answer": llm_output.resposta_texto,
                 "source_document_id": source_doc['id'],
                 "source_document_url": source_doc['urlArquivo'],
                 "source_document_title": source_doc['titulo']
