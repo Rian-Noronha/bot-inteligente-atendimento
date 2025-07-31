@@ -1,147 +1,90 @@
 const {Categoria} = require('../models');
 const {Op} = require('sequelize');
+const { validarCamposObrigatorios } = require('../utils/validation');
+const { getPaginationParams, buildPaginationResponse } = require('../utils/pagination');
 
 /**
  * Pegando todas as categorias.
  */
 exports.pegarTodasCategorias = async (req, res) => {
-    try{
-        const categorias = await Categoria.findAll();
-        res.status(200).json(categorias);
-    }catch(error){
-        res.status(500).json({message: 'Erro ao buscar categorias.', error: error.message});
-    }
+    // try...catch removido, o asyncHandler nas rotas irá capturar erros.
+    const categorias = await Categoria.findAll();
+    res.status(200).json(categorias);
 };
 
 /**
  * Busca categorias com paginação e filtro de busca.
  */
 exports.pegarCategoriasPorPaginacao = async (req, res) => {
-    try {
-        const { page = 1, limit = 10, search = '' } = req.query;
+    // try...catch removido.
+    const { page, limit, offset, search } = getPaginationParams(req.query);
 
-        const pageInt = parseInt(page, 10);
-        const limitInt = parseInt(limit, 10);
-        const qtdItensPular = (pageInt - 1) * limitInt;
-
-        let whereClause = {};
-        if (search) {
-            whereClause = {
-                nome: { [Op.iLike]: `%${search}%` }
-            };
-        }
-
-        const { count, rows } = await Categoria.findAndCountAll({
-            where: whereClause,
-            limit: limitInt,
-            offset: qtdItensPular,
-            order: [['nome', 'ASC']]
-        });
-
-        const totalPages = Math.ceil(count / limitInt);
-
-        res.status(200).json({
-            data: rows,
-            meta: {
-                totalItems: count,
-                itemsPerPage: limitInt,
-                currentPage: pageInt,
-                totalPages: totalPages
-            }
-        });
-
-    } catch (error) {
-        res.status(500).json({ message: 'Erro ao buscar categorias.', error: error.message });
+    let whereClause = {};
+    if (search) {
+        whereClause = {
+            nome: { [Op.iLike]: `%${search}%` }
+        };
     }
+
+    const { count, rows } = await Categoria.findAndCountAll({
+        where: whereClause,
+        limit: limit,
+        offset: offset,
+        order: [['nome', 'ASC']]
+    });
+
+    const response = buildPaginationResponse(rows, count, page, limit);
+
+    res.status(200).json(response);
 };
 
 exports.pegarCategoriaPorId = async (req, res) => {
-    try{
-        const {id} = req.params;
-        const categoria = await Categoria.findByPk(id);
+    const { id } = req.params;
+    const categoria = await Categoria.findByPk(id);
 
-        if(categoria){
-            res.status(200).json(categoria);
-        }else{
-            res.status(404).json({message: 'Categoria não encontrada.'});
-        }
-        
-    }catch(error){
-        res.status(500).json({message: 'Erro ao buscar categoria.', error: error.message});
+    if (categoria) {
+        res.status(200).json(categoria);
+    } else {
+        res.status(404).json({ message: 'Categoria não encontrada.' });
     }
 };
 
 exports.criarCategoria = async (req, res) => {
-    try{
-        const {nome, descricao} = req.body;
-        if(!validarCampos(nome, descricao)){
-            return res.status(400).json({message: 'Os campos nome e descrição são obrigatórios.'});
-        }
-
-        const novaCategoria = await Categoria.create({nome, descricao});
-        res.status(201).json(novaCategoria);
-    }catch(error){
-        res.status(500).json({message: 'Erro ao criar categoria.', error: error.message});
+    const { nome, descricao } = req.body;
+    if (!validarCamposObrigatorios([nome, descricao])) {
+        return res.status(400).json({ message: 'Os campos nome e descrição são obrigatórios.' });
     }
+
+    const novaCategoria = await Categoria.create({ nome, descricao });
+    res.status(201).json(novaCategoria);
 };
 
 
 exports.atualizarCategoria = async (req, res) => {
-    try{
-        const {id} = req.params;
-        const {nome, descricao} = req.body;
+    const { id } = req.params;
+    const { nome, descricao } = req.body;
 
-        const [atualizada] = await Categoria.update({nome, descricao}, {
-            where: {id: id}
-        });
+    const [atualizada] = await Categoria.update({ nome, descricao }, {
+        where: { id: id }
+    });
 
-        if(atualizada){
-            const categoriaAtualizada = await Categoria.findByPk(id);
-            res.status(200).json(categoriaAtualizada);
-        }else{
-            res.status(404).json({message: 'Categoria não encontrada.'});
-        }
-
-    }catch(error){
-        res.status(500).json({message: 'Erro ao atualizar categoria.', error: error.message});
+    if (atualizada) {
+        const categoriaAtualizada = await Categoria.findByPk(id);
+        res.status(200).json(categoriaAtualizada);
+    } else {
+        res.status(404).json({ message: 'Categoria não encontrada.' });
     }
 };
 
-
 exports.deletarCategoria = async (req, res) => {
-    try{
-        const {id} = req.params;
-        const deletada = await Categoria.destroy({
-            where: {id: id}
-        });
+    const { id } = req.params;
+    const deletada = await Categoria.destroy({
+        where: { id: id }
+    });
 
-        if(deletada){
-            res.status(204).send(); 
-        }else{
-            res.status(404).json({message: 'Categoria não encontrada.'});
-        }
-    }catch(error){
-
-        if (error.parent && (error.parent.code === '23503' || error.parent.code === '23502')) {
-            return res.status(409).json({ 
-                message: 'Não é possível excluir esta categoria, pois ela está a ser utilizada por uma ou mais subcategorias.' 
-            });
-        }
-        
-        console.error("ERRO INESPERADO AO DELETAR CATEGORIA:", error);
-        res.status(500).json({ message: 'Erro ao deletar categoria.', error: error.message });
-    
+    if (deletada) {
+        res.status(204).send();
+    } else {
+        res.status(404).json({ message: 'Categoria não encontrada.' });
     }
-}
-
-
-
-function validarCampos(nome, descricao) {
-    let camposValidados = true;
-
-    if (!nome || !descricao) {
-        camposValidados = false;
-    }
-
-    return camposValidados;
-}
+};

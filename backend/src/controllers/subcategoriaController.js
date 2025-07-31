@@ -1,137 +1,93 @@
 const { Subcategoria, Categoria } = require('../models');
+const { validarCamposObrigatorios } = require('../utils/validation');
 
 /**
  * @description Busca todas as subcategorias que pertencem a uma categoria específica.
  * @param {string} req.params.categoriaId - O ID da categoria pai.
  */
 exports.pegarSubcategoriasPorCategoria = async (req, res) => {
-    try {
-        const { categoriaId } = req.params;
-        const subcategorias = await Subcategoria.findAll({
-            where: {
-                categoria_id: categoriaId
-            }
-        });
-        res.status(200).json(subcategorias);
-    } catch (error) {
-        res.status(500).json({ message: "Erro ao buscar subcategorias por categoria.", error: error.message });
-    }
+    const { categoriaId } = req.params;
+    const subcategorias = await Subcategoria.findAll({
+        where: {
+            categoria_id: categoriaId
+        }
+    });
+    res.status(200).json(subcategorias);
 };
 
 
 //listar todas as subcategorias conectando à sua categoria 
 exports.pegarTodasSubcategorias = async (req, res) => {
-    try {
-        const subcategorias = await Subcategoria.findAll({
-            include: [{
-                model: Categoria,
-                as: 'categoria', // Alias definido na associação
-                attributes: ['nome'] // Pega apenas o nome da categoria
-            }]
-        });
-        res.status(200).json(subcategorias);
-    } catch (error) {
-        res.status(500).json({ message: "Erro ao buscar subcategorias", error: error.message });
-    }
+    const subcategorias = await Subcategoria.findAll({
+        include: [{
+            model: Categoria,
+            as: 'categoria',
+            attributes: ['nome']
+        }]
+    });
+    res.status(200).json(subcategorias);
 };
 
-
 exports.pegarSubcategoriaPorId = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const subcategoria = await Subcategoria.findByPk(id, {
-            include: [{ model: Categoria, as: 'categoria', attributes: ['nome'] }]
-        });
+    const { id } = req.params;
+    const subcategoria = await Subcategoria.findByPk(id, {
+        include: [{ model: Categoria, as: 'categoria', attributes: ['nome'] }]
+    });
 
-        if (subcategoria) {
-            res.status(200).json(subcategoria);
-        } else {
-            res.status(404).json({ message: "Subcategoria não encontrada." });
-        }
-    } catch (error) {
-        res.status(500).json({ message: "Erro ao buscar subcategoria", error: error.message });
+    if (subcategoria) {
+        res.status(200).json(subcategoria);
+    } else {
+        throw { status: 404, message: "Subcategoria não encontrada." };
     }
 };
 
 //criar categoria associando à sua categoria
 exports.criarSubcategoria = async (req, res) => {
-    try {
-        const { nome, descricao, categoria_id } = req.body;
-        
-        
-        if (!validarCampos(nome, descricao, categoria_id)) {
-            return res.status(400).json({ message: "Os campos nome, descrição e categoria_id são obrigatórios." });
-        }
-
-        
-        const categoriaPai = await Categoria.findByPk(categoria_id);
-        if (!categoriaPai) {
-            return res.status(404).json({ message: "Categoria pai não encontrada." });
-        }
-
-        const novaSubcategoria = await Subcategoria.create({ nome, descricao, categoria_id });
-        res.status(201).json(novaSubcategoria);
-
-    } catch (error) {
-        res.status(500).json({ message: "Erro ao criar subcategoria.", error: error.message });
+    const { nome, descricao, categoria_id } = req.body;
+    
+    if (!validarCamposObrigatorios([nome, descricao, categoria_id])) {
+        throw { status: 400, message: "Os campos nome, descrição e categoria_id são obrigatórios." };
     }
-};
+    
+    const categoriaPai = await Categoria.findByPk(categoria_id);
+    if (!categoriaPai) {
+        throw { status: 404, message: "Categoria pai não encontrada." };
+    }
 
+    const novaSubcategoria = await Subcategoria.create({ nome, descricao, categoria_id });
+    res.status(201).json(novaSubcategoria);
+};
 
 exports.atualizarSubcategoria = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { nome, descricao, categoria_id } = req.body;
+    const { id } = req.params;
+    const { nome, descricao, categoria_id } = req.body;
 
-        const [updated] = await Subcategoria.update({ nome, descricao, categoria_id }, {
-            where: { id: id }
-        });
+    if (!validarCamposObrigatorios([nome, descricao, categoria_id])) {
+         throw { status: 400, message: "Os campos nome, descrição e categoria_id são obrigatórios." };
+    }
 
-        if (updated) {
-            const subcategoriaAtualizada = await Subcategoria.findByPk(id);
-            res.status(200).json(subcategoriaAtualizada);
-        } else {
-            res.status(404).json({ message: "Subcategoria não encontrada." });
-        }
-    } catch (error) {
-        res.status(500).json({ message: "Erro ao atualizar subcategoria.", error: error.message });
+    const [updated] = await Subcategoria.update({ nome, descricao, categoria_id }, {
+        where: { id: id }
+    });
+
+    if (updated) {
+        const subcategoriaAtualizada = await Subcategoria.findByPk(id);
+        res.status(200).json(subcategoriaAtualizada);
+    } else {
+        throw { status: 404, message: "Subcategoria não encontrada." };
     }
 };
-
 
 exports.deletarSubcategoria = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const deleted = await Subcategoria.destroy({
-            where: { id: id }
-        });
+    const { id } = req.params;
+    const deleted = await Subcategoria.destroy({
+        where: { id: id }
+    });
 
-        if (deleted) {
-            res.status(204).send();
-        } else {
-            res.status(404).json({ message: "Subcategoria não encontrada." });
-        }
-    } catch (error) {
-        
-               // CORREÇÃO: Verificando o código do erro do banco de dados para maior robustez
-        if (error.parent && (error.parent.code === '23503' || error.parent.code === '23502')) {
-            return res.status(409).json({ 
-                message: 'Não é possível excluir esta subcategoria, pois ela está a ser utilizada por documentos ou assuntos pendentes.' 
-            });
-        }
-        
-        console.error("ERRO INESPERADO AO DELETAR SUBCATEGORIA:", error);
-        res.status(500).json({ message: 'Erro ao deletar subcategoria.', error: error.message });
+    if (deleted) {
+        res.status(204).send();
+    } else {
+        throw { status: 404, message: "Subcategoria não encontrada." };
     }
 };
 
-function validarCampos(nome, descricao, categoria_id){
-    let camposValidados = true;
-
-    if(!nome || !descricao || !categoria_id){
-        camposValidados = false;
-    }
-
-
-    return camposValidados;
-}

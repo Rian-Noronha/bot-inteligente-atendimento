@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const relatorioController = require('../controllers/relatorioController');
-
+const asyncHandler = require('../utils/asyncHandler');
 const { protect } = require('../middlewares/authMiddleware');
 const { isAdmin } = require('../middlewares/roleMiddleware');
 
@@ -11,7 +11,7 @@ const { isAdmin } = require('../middlewares/roleMiddleware');
  * Pode ser filtrado por ?data_inicio=AAAA-MM-DD&data_fim=AAAA-MM-DD
  * @access  Privado (Administrador)
  */
-router.get('/kpis', protect, isAdmin, relatorioController.getKpis);
+router.get('/kpis', protect, isAdmin, asyncHandler(relatorioController.getKpis));
 
 
 module.exports = router;

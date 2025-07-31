@@ -14,6 +14,7 @@ const assuntoPendenteRoutes = require('./routes/assuntoPendenteRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const authRoutes= require('./routes/authRoutes');
 const relatorioRoutes = require('./routes/relatorioRoutes');
+const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
 const corsOptions = {
@@ -47,6 +48,10 @@ app.use('/api', chatRespostaRoutes);
 
 // Rota de relatórios de administrador
 app.use('/api/relatorios', relatorioRoutes);
+
+//Middleware para tratar erros
+app.use(errorHandler);
+
 
 
 module.exports = app;
