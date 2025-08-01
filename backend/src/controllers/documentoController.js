@@ -7,9 +7,8 @@ const { getPaginationParams, buildPaginationResponse } = require('../utils/pagin
 const AI_SERVICE_PROCESS_URL = 'http://localhost:8000/api/documents/process';
 const redisClient = require('../config/redisClient')
 
-
 /**
- * Helper para encapsular transações, revertendo em caso de erro.
+ * encapsular transações, revertendo em caso de erro.
  */
 const withTransaction = (fn) => async (req, res) => {
     const t = await sequelize.transaction();
@@ -18,7 +17,7 @@ const withTransaction = (fn) => async (req, res) => {
         await t.commit();
     } catch (error) {
         await t.rollback();
-        throw error; // Lança o erro para o asyncHandler tratar
+        throw error; 
     }
 };
 
@@ -50,7 +49,7 @@ exports.criarDocumento = withTransaction(async (req, res, t) => {
         descricao,
         solucao,
         subcategoria_id,
-        palavrasChave, // Vem como array de strings, exemplo: ['termo1', 'termo2']
+        palavrasChave, // array de strings
         urlArquivo,
         caminhoArquivo,
         tipoArquivo
@@ -60,12 +59,12 @@ exports.criarDocumento = withTransaction(async (req, res, t) => {
         throw { status: 400, message: 'Os campos "titulo", "descricao" e "subcategoria_id" são obrigatórios.' };
     }
 
-    // 1. Monta o payload para enviar as informações de texto para a IA
+    // payload para enviar as informações de texto para a IA
     const payloadParaIA = {
         titulo,
         descricao,
         subcategoria_id,
-        palavras_chave: palavrasChave || [], // Garante que é um array, mesmo que vazio
+        palavras_chave: palavrasChave || [], 
         solucao: solucao || null,
         url_arquivo: urlArquivo || null
     };
@@ -74,7 +73,7 @@ exports.criarDocumento = withTransaction(async (req, res, t) => {
 
     let responseIA;
     try {
-        // 2. Chama a IA para processar o conteúdo
+        // IA para processar o conteúdo
         responseIA = await axios.post(AI_SERVICE_PROCESS_URL, payloadParaIA);
     } catch (error) {
         if (error.response) {
@@ -91,11 +90,9 @@ exports.criarDocumento = withTransaction(async (req, res, t) => {
 
     const documentosCriados = [];
 
-    // 3. Itera sobre cada documento retornado pela IA para salvá-lo
     for (const docData of documentosProcessadosDaIA) {
-        // Cria o documento com os dados da IA + os dados do arquivo original
         const novoDocumento = await Documento.create({
-            // Dados vindos da IA
+            // vindos da IA
             titulo: docData.titulo,
             descricao: docData.descricao,
             solucao: docData.solucao,
@@ -103,14 +100,14 @@ exports.criarDocumento = withTransaction(async (req, res, t) => {
             subcategoria_id: docData.subcategoria_id,
             
             // Adiciona os campos do arquivo original a CADA chunk salvo.
-            // valores recebidos do frontend, não os da IA.
+            // valores recebidos do frontend
             urlArquivo: urlArquivo,
             caminhoArquivo: caminhoArquivo,
             tipoArquivo: tipoArquivo,
             ativo: true,
         }, { transaction: t });
 
-        // Lógica para associar as palavras-chave
+        // associar as palavras-chave
         if (docData.palavras_chave && docData.palavras_chave.length > 0) {
             const promises = docData.palavras_chave.map(p => PalavraChave.findOrCreate({
                 where: { palavra: p.trim().toLowerCase() },
@@ -125,7 +122,7 @@ exports.criarDocumento = withTransaction(async (req, res, t) => {
         documentosCriados.push(novoDocumento);
     }
 
-    await limparCacheRespostas(); // Limpa o cache após a transação ser bem-sucedida e comitada
+    await limparCacheRespostas();
 
     res.status(201).json({
         message: 'Documento(s) processado(s) e salvo(s) com sucesso.',
@@ -135,7 +132,7 @@ exports.criarDocumento = withTransaction(async (req, res, t) => {
 
 
 /**
- * atualização passa pelo serviço de IA para recalcular o embedding.
+ * recalcular o embedding.
  */
 exports.atualizarDocumento = withTransaction(async (req, res, t) => {
     const { id } = req.params;
@@ -146,7 +143,7 @@ exports.atualizarDocumento = withTransaction(async (req, res, t) => {
         throw { status: 404, message: 'Documento não encontrado.' };
     }
     
-    // Prepara o payload para o serviço de IA recalcular o embedding
+    // payload para o serviço de IA recalcular o embedding
     const payloadParaIA = {
         titulo: dadosDocumento.titulo || documento.titulo,
         descricao: dadosDocumento.descricao || documento.descricao,
@@ -164,12 +161,12 @@ exports.atualizarDocumento = withTransaction(async (req, res, t) => {
         throw { status: 500, message: `Erro ao conectar com o serviço de IA: ${error.message}` };
     }
 
-    const documentoProcessado = responseIA.data.data[0]; // Pega o único documento processado
+    const documentoProcessado = responseIA.data.data[0]; // único documento processado
     if (!documentoProcessado || !documentoProcessado.embedding) {
         throw { status: 500, message: 'O serviço de IA não retornou um embedding válido para a atualização.' };
     }
 
-    // Atualiza o campo de embedding com o novo valor calculado pela IA
+    // campo de embedding com o novo valor calculado pela IA
     dadosDocumento.embedding = documentoProcessado.embedding;
 
     await documento.update(dadosDocumento, { transaction: t });
@@ -188,11 +185,19 @@ exports.atualizarDocumento = withTransaction(async (req, res, t) => {
 });
 
 
-// --- Funções de Leitura e Deleção ---
+/**
+ * todos os documentos com paginação e filtro de busca.
+ * duas consultas para garantir performance e precisão
+ * com buscas em tabelas relacionadas.
+ */
 exports.pegarTodosDocumentos = async (req, res) => {
     const { page, limit, offset, search } = getPaginationParams(req.query);
-    
     let whereClause = {};
+    const includeClause = [
+        { model: Subcategoria, as: 'subcategoria', attributes: [], include: [{ model: Categoria, as: 'categoria', attributes: [] }] },
+        { model: PalavraChave, as: 'palavrasChave', attributes: [], through: { attributes: [] } }
+    ];
+
     if (search) {
         const searchTerm = `%${search}%`;
         whereClause = {
@@ -207,41 +212,34 @@ exports.pegarTodosDocumentos = async (req, res) => {
         };
     }
 
-    // `findAndCountAll` de forma otimizada para contagem
-    const { count, rows } = await Documento.findAndCountAll({
+    // apenas os IDs dos documentos que correspondem ao filtro.
+    // Esta consulta é rápida e evita problemas de contagem do Sequelize com JOINs.
+    const matchingDocuments = await Documento.findAll({
         where: whereClause,
+        include: includeClause,
+        attributes: ['id'],
+        group: ['Documento.id'],
+        raw: true,
+    });
+
+    const totalItems = matchingDocuments.length;
+    const documentIds = matchingDocuments.map(doc => doc.id);
+
+    // dados completos apenas para os IDs da página atual.
+    const rows = await Documento.findAll({
+        where: { id: { [Op.in]: documentIds } },
         limit: limit,
         offset: offset,
         attributes: { exclude: ['embedding'] },
         include: [
-            {
-                model: Subcategoria,
-                as: 'subcategoria',
-                attributes: ['nome'],
-                required: false, // LEFT JOIN para permitir busca em subcategorias e categorias
-                include: [{ model: Categoria, as: 'categoria', attributes: ['nome'], required: false }]
-            },
-            {
-                model: PalavraChave,
-                as: 'palavrasChave',
-                attributes: ['id', 'palavra'],
-                through: { attributes: [] },
-                required: false // LEFT JOIN para permitir busca em palavras-chave
-            }
+            { model: Subcategoria, as: 'subcategoria', attributes: ['nome'], include: [{ model: Categoria, as: 'categoria', attributes: ['nome'] }] },
+            { model: PalavraChave, as: 'palavrasChave', attributes: ['id', 'palavra'], through: { attributes: [] } }
         ],
-        order: [['id', 'DESC']],
-        distinct: true //count ser preciso com LEFT JOINs
+        order: [['id', 'DESC']]
     });
 
-    const response = {
-        documentos: rows,
-        meta: {
-            totalItems: count,
-            itemsPerPage: limit,
-            currentPage: page,
-            totalPages: Math.ceil(count / limit)
-        }
-    };
+    // construir a resposta final padronizada.
+    const response = buildPaginationResponse(rows, totalItems, page, limit);
 
     res.status(200).json(response);
 };
@@ -288,7 +286,7 @@ exports.deletarDocumento = withTransaction(async (req, res, t) => {
             // Se o arquivo não tem mais registros associados, deleta do Firebase
             // Chamar o deleteFileByPath FORA da transação do Sequelize,
             // pois se a transação der rollback, o arquivo não terá sido deletado indevidamente.
-            // E também, se o Firebase falhar, não queremos dar rollback no banco.
+            // E também, se o Firebase falhar, não dar rollback no banco.
             try {
                 await firebaseStorageService.deleteFileByPath(caminhoDoArquivo);
                 mensagemFinal = 'Último parágrafo deletado, e o arquivo original foi removido do Storage.';

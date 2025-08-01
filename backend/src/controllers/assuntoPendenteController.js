@@ -1,43 +1,70 @@
 const { AssuntoPendente, ChatConsulta, Subcategoria, Categoria } = require('../models'); // Importe o model Categoria também
 const { validarCamposObrigatorios } = require('../utils/validation');
 const { getPaginationParams, buildPaginationResponse } = require('../utils/pagination');
+const {Op} = require('sequelize');
 
 /**
  * Busca todos os assuntos pendentes de forma PAGINADA.
- * Ideal para a tela principal do dashboard.
+ * duas consultas para garantir performance e precisão.
  */
 exports.pegarAssuntosPendentesPaginado = async (req, res) => {
     const { page, limit, offset, search } = getPaginationParams(req.query);
 
     let whereClause = {};
+    const includeClause = [
+        {
+            model: Subcategoria,
+            as: 'subcategoria',
+            attributes: [],
+            include: [{ model: Categoria, as: 'categoria', attributes: [] }]
+        }
+    ];
+
     if (search) {
+        const searchTerm = `%${search}%`;
         whereClause = {
             [Op.or]: [
-                { texto_assunto: { [Op.iLike]: `%${search}%` } },
-                { '$subcategoria.nome$': { [Op.iLike]: `%${search}%` } },
-                { '$subcategoria.categoria.nome$': { [Op.iLike]: `%${search}%` } }
+                { texto_assunto: { [Op.iLike]: searchTerm } },
+                { '$subcategoria.nome$': { [Op.iLike]: searchTerm } },
+                { '$subcategoria.categoria.nome$': { [Op.iLike]: searchTerm } }
             ]
         };
     }
 
-    const { count, rows } = await AssuntoPendente.findAndCountAll({
+    // apenas os IDs dos assuntos que correspondem ao filtro.
+    const matchingAssuntos = await AssuntoPendente.findAll({
         where: whereClause,
-        include: [
-            { model: Subcategoria, as: 'subcategoria', required: true, include: [{ model: Categoria, as: 'categoria', required: true }] }
-        ],
-        order: [['createdAt', 'DESC']],
-        limit: limit,
-        offset: offset,
-        distinct: true,
-        subQuery: false
+        include: includeClause,
+        attributes: ['id'],
+        group: ['AssuntoPendente.id'], // Agrupa para garantir IDs únicos
+        raw: true,
     });
 
-    const response = buildPaginationResponse(rows, count, page, limit);
+    const totalItems = matchingAssuntos.length;
+    const assuntoIds = matchingAssuntos.map(assunto => assunto.id);
+
+    // dados completos apenas para os IDs da página atual.
+    const rows = await AssuntoPendente.findAll({
+        where: { id: { [Op.in]: assuntoIds } },
+        limit: limit,
+        offset: offset,
+        include: [
+            {
+                model: Subcategoria,
+                as: 'subcategoria',
+                include: [{ model: Categoria, as: 'categoria' }]
+            }
+        ],
+        order: [['createdAt', 'DESC']]
+    });
+
+    // construir a resposta final padronizada.
+    const response = buildPaginationResponse(rows, totalItems, page, limit);
     res.status(200).json(response);
 };
 
 /**
- * Busca TODOS os assuntos pendentes, sem paginação.
+ * assuntos pendentes, sem paginação.
  */
 exports.pegarTodosAssuntosPendentes = async (req, res) => {
     const assuntos = await AssuntoPendente.findAll({

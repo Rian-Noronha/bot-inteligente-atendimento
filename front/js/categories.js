@@ -2,63 +2,51 @@ import { apiCategoriaService } from './services/apiCategoriaService.js';
 import { apiSubcategoriaService } from './services/apiSubcategoriaService.js';
 import { showNotification } from './utils/notifications.js';
 import { inicializarUIComum } from './utils/uiComum.js';
+import { PaginationManager } from './utils/PaginationManager.js';
+import { ModalManager } from './utils/ModalManager.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     inicializarUIComum();
 
+    
     const searchInput = document.getElementById('category-search-input');
     const numDisplayInput = document.getElementById('num-categories-display');
     const categoryContainer = document.getElementById('category-list-container');
     const loadingMessage = document.getElementById('loading-message');
     const addCategoryBtn = document.getElementById('add-category-button');
-    
     const paginationControlsContainer = document.getElementById('pagination-controls');
     const prevPageBtn = document.getElementById('prev-page-btn');
     const nextPageBtn = document.getElementById('next-page-btn');
     const pageInfoSpan = document.getElementById('page-info');
-
-    const categoryModal = document.getElementById('category-modal');
-    const categoryModalTitle = document.getElementById('category-modal-title');
-    const categoryForm = document.getElementById('category-form');
-    const categoryIdInput = document.getElementById('category-id');
-    const categoryNameInput = document.getElementById('category-name');
-    const categoryDescInput = document.getElementById('category-description');
-    const subcategoryModal = document.getElementById('subcategory-modal');
-    const subcategoryModalTitle = document.getElementById('subcategory-modal-title');
-    const subcategoryForm = document.getElementById('subcategory-form');
-    const subcategoryIdInput = document.getElementById('subcategory-id');
-    const parentCategoryIdInput = document.getElementById('parent-category-id');
-    const subcategoryNameInput = document.getElementById('subcategory-name');
-    const subcategoryDescInput = document.getElementById('subcategory-description');
-
-    const confirmDeleteModal = document.getElementById('confirm-delete-modal');
-    const confirmDeleteMessage = document.getElementById('confirm-delete-message');
-    const btnConfirmDelete = document.getElementById('btn-confirm-delete');
-    const btnCancelDelete = document.getElementById('btn-cancel-delete');
+    
     
     let categoriesOnCurrentPage = [];
-    let currentPage = 1;
-    let totalPages = 1;
-
     let itemToDelete = null;
+    const paginationManager = new PaginationManager({
+        paginationControls: paginationControlsContainer, 
+        prevPageBtn, 
+        nextPageBtn, 
+        pageInfoSpan,
+        searchInput, 
+        itemsPerPageInput: numDisplayInput, 
+        onUpdate: fetchAndRenderCategories,
+        debounceDelay: 300 
+    });
+    
+    const categoryModal = new ModalManager('category-modal');
+    const subcategoryModal = new ModalManager('subcategory-modal');
+    const confirmDeleteModal = new ModalManager('confirm-delete-modal');
 
+    
     async function fetchAndRenderCategories() {
         loadingMessage.style.display = 'block';
         categoryContainer.innerHTML = '';
-        paginationControlsContainer.style.display = 'none';
-
         try {
-            const searchTerm = searchInput.value.trim();
-            const itemsPerPage = parseInt(numDisplayInput.value, 10) || 10;
-            
-            const response = await apiCategoriaService.pegarPaginada(currentPage, itemsPerPage, searchTerm);
-            
+            const { page, limit, search } = paginationManager.getApiParams();
+            const response = await apiCategoriaService.pegarPaginada(page, limit, search);
             categoriesOnCurrentPage = response.data;
-            totalPages = response.meta.totalPages;
-
             renderCategories(categoriesOnCurrentPage);
-            renderPaginationControls();
-
+            paginationManager.updateState(response.meta.totalPages);
         } catch (error) {
             categoryContainer.innerHTML = `<p class="error text-center p-4">Falha ao carregar categorias: ${error.message}</p>`;
         } finally {
@@ -93,17 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
             categoryContainer.appendChild(categoryElement);
         });
     };
-
-    const renderPaginationControls = () => {
-        if (totalPages <= 1) {
-            paginationControlsContainer.style.display = 'none';
-            return;
-        }
-        paginationControlsContainer.style.display = 'flex';
-        pageInfoSpan.textContent = `Página ${currentPage} de ${totalPages}`;
-        prevPageBtn.disabled = currentPage === 1;
-        nextPageBtn.disabled = currentPage === totalPages;
-    };
         
     const renderSubcategories = (listElement, subcategories) => {
         listElement.innerHTML = '';
@@ -126,221 +103,170 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const openCategoryModal = (category = null) => {
-        categoryForm.reset();
-        if (category) {
-            categoryModalTitle.textContent = 'Editar Categoria';
-            categoryIdInput.value = category.id;
-            categoryNameInput.value = category.nome;
-            categoryDescInput.value = category.descricao || '';
-        } else {
-            categoryModalTitle.textContent = 'Nova Categoria';
-        }
-        categoryModal.style.display = 'flex';
-    };
-
-    const openSubcategoryModal = (parentCategory, subcategory = null) => {
-        subcategoryForm.reset();
-        parentCategoryIdInput.value = parentCategory.id;
-        if (subcategory) {
-            subcategoryModalTitle.textContent = `Editar Subcategoria em "${parentCategory.nome}"`;
-            subcategoryIdInput.value = subcategory.id;
-            subcategoryNameInput.value = subcategory.nome;
-            subcategoryDescInput.value = subcategory.descricao || '';
-        } else {
-            subcategoryModalTitle.textContent = `Nova Subcategoria em "${parentCategory.nome}"`;
-        }
-        subcategoryModal.style.display = 'flex';
-    };
-
-    const closeModal = (modal) => {
-        modal.style.display = 'none';
-    };
-
-
-    categoryContainer.addEventListener('click', async (event) => {
-        const button = event.target.closest('.btn-action');
-        if (!button) return;
-
-        const accordionItem = button.closest('.accordion-item');
-        const categoryId = accordionItem ? accordionItem.dataset.categoryId : null;
-
-        // --- Ação: Expandir/Recolher Acordeão ---
-        if (button.classList.contains('btn-toggle')) {
-            const content = accordionItem.querySelector('.accordion-content');
-            const list = content.querySelector('.subcategory-list');
-            const isLoading = content.querySelector('.content-loading');
-            const isLoaded = list.dataset.loaded === 'true';
-            const isOpening = content.style.display === 'none';
-
-            content.style.display = isOpening ? 'block' : 'none';
-            const icon = button.querySelector('.toggle-icon');
-            if (icon) icon.classList.toggle('rotated', isOpening);
-            
-            if (isOpening && !isLoaded) {
-                isLoading.style.display = 'block';
-                try {
-                    const subcategories = await apiSubcategoriaService.pegarPorCategoriaId(categoryId);
-                    renderSubcategories(list, subcategories);
-                    list.dataset.loaded = 'true';
-                } catch (error) {
-                    list.innerHTML = `<li class="error">Erro ao carregar subcategorias.</li>`;
-                } finally {
-                    isLoading.style.display = 'none';
-                }
-            }
-
-            return; 
-        }
-
-        const categoryData = categoriesOnCurrentPage.find(c => c.id == categoryId);
-
-        // --- Ações de Categoria ---
-        if (button.classList.contains('btn-add-subcategory')) {
-            openSubcategoryModal({ id: categoryId, nome: categoryData.nome });
-        } else if (button.classList.contains('btn-edit-category')) {
-            openCategoryModal(categoryData);
-        } else if (button.classList.contains('btn-delete-category')) {
-            // Prepara para deletar a categoria
-            itemToDelete = { type: 'category', id: categoryId };
-            confirmDeleteMessage.textContent = `Tem certeza que deseja excluir a categoria "${categoryData.nome}" e TODAS as suas subcategorias?`;
-            confirmDeleteModal.style.display = 'flex';
-        }
+    
+    async function handleToggleAccordion(accordionItem) {
+        const content = accordionItem.querySelector('.accordion-content');
+        const list = content.querySelector('.subcategory-list');
+        const isLoading = content.querySelector('.content-loading');
+        const icon = accordionItem.querySelector('.toggle-icon');
+        const isOpening = content.style.display === 'none';
         
-        // --- Ações de Subcategoria ---
-        const subcategoryItem = button.closest('li[data-subcategory-id]');
-        if (subcategoryItem) {
-            const subcategoryId = subcategoryItem.dataset.subcategoryId;
-            const subcategoryData = {
-                id: subcategoryId,
-                nome: subcategoryItem.dataset.subcategoryName,
-                descricao: subcategoryItem.dataset.subcategoryDescription
-            };
+        content.style.display = isOpening ? 'block' : 'none';
+        icon?.classList.toggle('rotated', isOpening);
 
-            if (button.classList.contains('btn-edit-subcategory')) {
-                openSubcategoryModal({ id: categoryId, nome: categoryData.nome }, subcategoryData);
-            } else if (button.classList.contains('btn-delete-subcategory')) {
-                // Prepara para deletar a subcategoria
-                itemToDelete = { type: 'subcategory', id: subcategoryId, element: subcategoryItem };
-                confirmDeleteMessage.textContent = `Tem certeza que deseja excluir a subcategoria "${subcategoryData.nome}"?`;
-                confirmDeleteModal.style.display = 'flex';
+        if (isOpening && list.dataset.loaded !== 'true') {
+            isLoading.style.display = 'block';
+            try {
+                const categoryId = accordionItem.dataset.categoryId;
+                const subcategories = await apiSubcategoriaService.pegarPorCategoriaId(categoryId);
+                renderSubcategories(list, subcategories);
+                list.dataset.loaded = 'true';
+            } catch (error) {
+                list.innerHTML = `<li class="error">Erro ao carregar.</li>`;
+            } finally {
+                isLoading.style.display = 'none';
             }
         }
+    }
+
+    
+    addCategoryBtn.addEventListener('click', () => {
+        categoryModal.open(modal => {
+            modal.querySelector('#category-modal-title').textContent = 'Nova Categoria';
+        });
     });
 
-    btnConfirmDelete.addEventListener('click', async () => {
-        if (!itemToDelete) return;
-        
-        const { type, id, element } = itemToDelete;
-
-        try {
-            if (type === 'category') {
-                await apiCategoriaService.deletar(id);
-                showNotification('Categoria excluída com sucesso!', 'success');
-                fetchAndRenderCategories(); // Recarrega a lista de categorias
-            } else if (type === 'subcategory') {
-                await apiSubcategoriaService.deletar(id);
-                showNotification('Subcategoria excluída com sucesso!', 'success');
-                element.remove(); // Remove apenas o item da lista para uma UX mais rápida
-            }
-        } catch (error) {
-            showNotification(`Erro ao deletar: ${error.message}`, 'error');
-        } finally {
-            closeModal(confirmDeleteModal);
-            itemToDelete = null;
-        }
-    });
-
-    btnCancelDelete.addEventListener('click', () => {
-        closeModal(confirmDeleteModal);
-        itemToDelete = null;
-    });
-
-    addCategoryBtn.addEventListener('click', () => openCategoryModal());
-    categoryModal.querySelector('.btn-cancel').addEventListener('click', () => closeModal(categoryModal));
-    subcategoryModal.querySelector('.btn-cancel').addEventListener('click', () => closeModal(subcategoryModal));
-
-    categoryForm.addEventListener('submit', async (e) => {
-         e.preventDefault();
-        const id = categoryIdInput.value;
-        const nome = categoryNameInput.value.trim();
-        const descricao = categoryDescInput.value.trim();
-        
+    categoryModal.handleSubmit(async (form) => {
+        const id = form.querySelector('#category-id').value;
+        const nome = form.querySelector('#category-name').value.trim();
+        const descricao = form.querySelector('#category-description').value.trim();
 
         if (!nome) {
-            showNotification('O campo "Nome" é obrigatório.', 'error');
-            return; 
+            showNotification('O nome da categoria é obrigatório.', 'error');
+            return;
         }
 
-        const data = { nome, descricao };
         try {
-            const message = id ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!';
-            id ? await apiCategoriaService.atualizar(id, data) : await apiCategoriaService.criar(data);
+            const data = { nome, descricao };
+            const message = id ? 'Categoria atualizada!' : 'Categoria criada!';
+            await (id ? apiCategoriaService.atualizar(id, data) : apiCategoriaService.criar(data));
             showNotification(message, 'success');
-            closeModal(categoryModal);
+            categoryModal.close();
             fetchAndRenderCategories();
         } catch (error) {
             showNotification('Erro ao salvar categoria: ' + error.message, 'error');
         }
     });
 
-    subcategoryForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = subcategoryIdInput.value;
-        const nome = subcategoryNameInput.value.trim();
-        const descricao = subcategoryDescInput.value.trim();
+    subcategoryModal.handleSubmit(async (form) => {
+        const id = form.querySelector('#subcategory-id').value;
+        const nome = form.querySelector('#subcategory-name').value.trim();
+        const descricao = form.querySelector('#subcategory-description').value.trim();
+        const categoria_id = form.querySelector('#parent-category-id').value;
 
-        
         if (!nome) {
-            showNotification('O campo "Nome" é obrigatório.', 'error');
-            return; 
+            showNotification('O nome da subcategoria é obrigatório.', 'error');
+            return;
         }
-        
-        const data = { 
-            nome, 
-            descricao,
-            categoria_id: parentCategoryIdInput.value
-        };
-        
-        try {
-            const message = id ? 'Subcategoria atualizada com sucesso!' : 'Subcategoria criada com sucesso!';
-            id ? await apiSubcategoriaService.atualizar(id, data) : await apiSubcategoriaService.criar(data);
-            showNotification(message, 'success');
-            closeModal(subcategoryModal);
 
-            // Força a recarga da lista de subcategorias na próxima vez que for aberta
-            const accordionItem = document.querySelector(`.accordion-item[data-category-id="${data.categoria_id}"]`);
+        try {
+            const data = { nome, descricao, categoria_id };
+            const message = id ? 'Subcategoria atualizada!' : 'Subcategoria criada!';
+            await (id ? apiSubcategoriaService.atualizar(id, data) : apiSubcategoriaService.criar(data));
+            showNotification(message, 'success');
+            subcategoryModal.close();
+            
+            const accordionItem = document.querySelector(`.accordion-item[data-category-id="${categoria_id}"]`);
             if (accordionItem) {
-                const list = accordionItem.querySelector('.subcategory-list');
-                list.dataset.loaded = 'false';
-                accordionItem.querySelector('.btn-toggle').click(); 
+                accordionItem.querySelector('.subcategory-list').dataset.loaded = 'false';
+                if (accordionItem.querySelector('.accordion-content').style.display === 'block') {
+                    handleToggleAccordion(accordionItem); // Recarrega se estiver aberto
+                }
             }
         } catch (error) {
             showNotification('Erro ao salvar subcategoria: ' + error.message, 'error');
         }
     });
 
-    searchInput.addEventListener('input', () => {
-        currentPage = 1;
-        fetchAndRenderCategories();
-    });
-    numDisplayInput.addEventListener('input', () => {
-        currentPage = 1;
-        fetchAndRenderCategories();
+    document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
+        if (!itemToDelete) return;
+        try {
+            if (itemToDelete.type === 'category') {
+                await apiCategoriaService.deletar(itemToDelete.id);
+                showNotification('Categoria excluída!', 'success');
+                fetchAndRenderCategories();
+            } else {
+                await apiSubcategoriaService.deletar(itemToDelete.id);
+                showNotification('Subcategoria excluída!', 'success');
+                itemToDelete.element.remove();
+            }
+        } catch (error) {
+            showNotification(`Erro ao deletar: ${error.message}`, 'error');
+        } finally {
+            confirmDeleteModal.close();
+            itemToDelete = null;
+        }
     });
 
-    prevPageBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            fetchAndRenderCategories();
-        }
-    });
-    nextPageBtn.addEventListener('click', () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            fetchAndRenderCategories();
-        }
-    });
     
+    categoryContainer.addEventListener('click', (event) => {
+        const button = event.target.closest('.btn-action');
+        if (!button) return;
+
+        const accordionItem = button.closest('.accordion-item');
+        const categoryId = accordionItem?.dataset.categoryId;
+        const categoryData = categoriesOnCurrentPage.find(c => c.id == categoryId);
+        
+        if (button.classList.contains('btn-toggle')) {
+            handleToggleAccordion(accordionItem);
+            return;
+        }
+        
+        if (!categoryData) return;
+
+        if (button.classList.contains('btn-add-subcategory')) {
+            subcategoryModal.open(modal => {
+                modal.querySelector('#subcategory-modal-title').textContent = `Nova Subcategoria em "${categoryData.nome}"`;
+                modal.querySelector('#parent-category-id').value = categoryData.id;
+            });
+        } else if (button.classList.contains('btn-edit-category')) {
+            categoryModal.open(modal => {
+                modal.querySelector('#category-modal-title').textContent = 'Editar Categoria';
+                modal.querySelector('#category-id').value = categoryData.id;
+                modal.querySelector('#category-name').value = categoryData.nome;
+                modal.querySelector('#category-description').value = categoryData.descricao || '';
+            });
+        } else if (button.classList.contains('btn-delete-category')) {
+            itemToDelete = { type: 'category', id: categoryId };
+            confirmDeleteModal.open(modal => {
+                modal.querySelector('#confirm-delete-message').textContent = `Excluir a categoria "${categoryData.nome}" e TODAS as suas subcategorias?`;
+            });
+        }
+        
+        const subcategoryItem = button.closest('li[data-subcategory-id]');
+        if (subcategoryItem) {
+            const subcategoryData = {
+                id: subcategoryItem.dataset.subcategoryId,
+                nome: subcategoryItem.dataset.subcategoryName,
+                descricao: subcategoryItem.dataset.subcategoryDescription
+            };
+
+            if (button.classList.contains('btn-edit-subcategory')) {
+                subcategoryModal.open(modal => {
+                    modal.querySelector('#subcategory-modal-title').textContent = `Editar Subcategoria em "${categoryData.nome}"`;
+                    modal.querySelector('#parent-category-id').value = categoryData.id;
+                    modal.querySelector('#subcategory-id').value = subcategoryData.id;
+                    modal.querySelector('#subcategory-name').value = subcategoryData.nome;
+                    modal.querySelector('#subcategory-description').value = subcategoryData.descricao;
+                });
+            } else if (button.classList.contains('btn-delete-subcategory')) {
+                itemToDelete = { type: 'subcategory', id: subcategoryData.id, element: subcategoryItem };
+                confirmDeleteModal.open(modal => {
+                    modal.querySelector('#confirm-delete-message').textContent = `Tem certeza que deseja excluir a subcategoria "${subcategoryData.nome}"?`;
+                });
+            }
+        }
+    });
+
     fetchAndRenderCategories();
 });

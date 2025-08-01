@@ -1,6 +1,8 @@
 import { apiPerfilService } from './services/apiPerfilService.js';
 import { showNotification } from './utils/notifications.js';
 import { inicializarUIComum } from './utils/uiComum.js';
+import { PaginationManager } from './utils/PaginationManager.js';
+import { ModalManager } from './utils/ModalManager.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     inicializarUIComum();
@@ -10,47 +12,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const cardsContainer = document.getElementById('profiles-cards-container');
     const noProfilesMessage = document.getElementById('no-profiles-message');
     const addProfileButton = document.getElementById('add-profile-button');
-    
     const paginationControlsContainer = document.getElementById('pagination-controls');
     const prevPageBtn = document.getElementById('prev-page-btn');
     const nextPageBtn = document.getElementById('next-page-btn');
     const pageInfoSpan = document.getElementById('page-info');
-
-    
-    const editModal = document.getElementById('edit-profile-modal');
-    const editForm = document.getElementById('edit-profile-form');
-    const modalTitle = editModal.querySelector('h2');
-    const editProfileId = document.getElementById('edit-profile-id');
-    const editProfileNome = document.getElementById('edit-profile-nome');
-    const editProfileDescricao = document.getElementById('edit-profile-descricao');
-    const btnCancel = editModal.querySelector('.btn-cancel');
-
-    
-    const confirmDeleteModal = document.getElementById('confirm-delete-modal');
-    const confirmDeleteMessage = document.getElementById('confirm-delete-message');
     const btnConfirmDelete = document.getElementById('btn-confirm-delete');
-    const btnCancelDelete = document.getElementById('btn-cancel-delete');
 
-    
     let profilesOnCurrentPage = [];
-    let currentPage = 1;
-    let totalPages = 1;
-
     let profileIdToDelete = null;
+
+    const paginationManager = new PaginationManager({
+        paginationControls: paginationControlsContainer,
+        prevPageBtn,
+        nextPageBtn,
+        pageInfoSpan,
+        searchInput,
+        itemsPerPageInput: numProfilesDisplayInput,
+        onUpdate: fetchAndRenderProfiles,
+        debounceDelay: 300 
+    });
+
+    const editModalManager = new ModalManager('edit-profile-modal');
+    const confirmDeleteModalManager = new ModalManager('confirm-delete-modal');
 
     async function fetchAndRenderProfiles() {
         try {
             noProfilesMessage.textContent = 'A carregar perfis...';
             noProfilesMessage.style.display = 'block';
             cardsContainer.style.display = 'none';
-            paginationControlsContainer.style.display = 'none';
-            const searchTerm = searchInput.value.trim();
-            const itemsPerPage = parseInt(numProfilesDisplayInput.value) || 10;
-            const response = await apiPerfilService.pegarPaginado(currentPage, itemsPerPage, searchTerm);
+
+            const { page, limit, search } = paginationManager.getApiParams();
+            const response = await apiPerfilService.pegarPaginado(page, limit, search);
+            
             profilesOnCurrentPage = response.data;
-            totalPages = response.meta.totalPages;
             renderProfileCards();
-            renderPaginationControls();
+
+            paginationManager.updateState(response.meta.totalPages);
         } catch (error) {
             console.error('Falha ao carregar perfis:', error);
             noProfilesMessage.textContent = 'Falha ao carregar dados do servidor.';
@@ -59,8 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-     function renderProfileCards() {
+    function renderProfileCards() {
         cardsContainer.innerHTML = '';
         if (profilesOnCurrentPage.length === 0) {
             noProfilesMessage.textContent = searchInput.value.trim() ? 'Nenhum perfil encontrado para sua busca.' : 'Nenhum perfil cadastrado.';
@@ -84,94 +80,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-    function renderPaginationControls() {
-        if (totalPages <= 1) {
-            paginationControlsContainer.style.display = 'none';
-            return;
-        }
-        paginationControlsContainer.style.display = 'flex';
-        pageInfoSpan.textContent = `Página ${currentPage} de ${totalPages}`;
-        prevPageBtn.disabled = currentPage === 1;
-        nextPageBtn.disabled = currentPage === totalPages;
-    }
-
-
-    function openEditModal(perfil = null) {
-        editForm.reset();
-        if (perfil) {
-            modalTitle.textContent = 'Editar Perfil';
-            editProfileId.value = perfil.id;
-            editProfileNome.value = perfil.nome;
-            editProfileDescricao.value = perfil.descricao || '';
-        } else {
-            modalTitle.textContent = 'Adicionar Novo Perfil';
-            editProfileId.value = '';
-        }
-        editModal.style.display = 'flex';
-    }
-
-    function closeEditModal() {
-        editModal.style.display = 'none';
-    }
-
-    searchInput.addEventListener('input', () => { currentPage = 1; fetchAndRenderProfiles(); });
-    numProfilesDisplayInput.addEventListener('input', () => { currentPage = 1; fetchAndRenderProfiles(); });
-    prevPageBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; fetchAndRenderProfiles(); } });
-    nextPageBtn.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; fetchAndRenderProfiles(); } });
-
-    editForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const id = editProfileId.value;
+    editModalManager.handleSubmit(async (form) => {
+        const id = form.querySelector('#edit-profile-id').value;
         const dados = {
-            nome: editProfileNome.value.trim(),
-            descricao: editProfileDescricao.value.trim()
+            nome: form.querySelector('#edit-profile-nome').value.trim(),
+            descricao: form.querySelector('#edit-profile-descricao').value.trim()
         };
 
-        if (!dados.nome) {
-            showNotification('O nome do perfil é obrigatório.', 'error');
-            return;
-        }
-
-        if (!dados.descricao) {
-            showNotification('Descrição é obrigatório.', 'error');
+        if (!dados.nome || !dados.descricao) {
+            showNotification('Nome e descrição são obrigatórios.', 'error');
             return;
         }
 
         try {
-            if (id) {
-                await apiPerfilService.atualizar(id, dados);
-                showNotification('Perfil atualizado com sucesso!', 'success');
-            } else {
-                await apiPerfilService.criar(dados);
-                showNotification('Perfil criado com sucesso!', 'success');
-            }
-            closeEditModal();
+            const serviceCall = id ? apiPerfilService.atualizar(id, dados) : apiPerfilService.criar(dados);
+            await serviceCall;
+            showNotification(id ? 'Perfil atualizado!' : 'Perfil criado!', 'success');
+            editModalManager.close();
             fetchAndRenderProfiles();
         } catch (error) {
             showNotification(`Erro ao salvar perfil: ${error.message}`, 'error');
         }
+    });
+
+    addProfileButton.addEventListener('click', () => {
+        editModalManager.open(modal => {
+            modal.querySelector('h2').textContent = 'Adicionar Novo Perfil';
+        });
     });
     
     cardsContainer.addEventListener('click', (event) => {
         const target = event.target.closest('button');
         if (!target) return;
         const id = target.dataset.id;
+        const perfil = profilesOnCurrentPage.find(p => p.id == id);
 
         if (target.classList.contains('btn-edit')) {
-            const perfil = profilesOnCurrentPage.find(p => p.id == id);
-            openEditModal(perfil);
+            editModalManager.open(modal => {
+                modal.querySelector('h2').textContent = 'Editar Perfil';
+                modal.querySelector('#edit-profile-id').value = perfil.id;
+                modal.querySelector('#edit-profile-nome').value = perfil.nome;
+                modal.querySelector('#edit-profile-descricao').value = perfil.descricao || '';
+            });
         } else if (target.classList.contains('btn-delete')) {
-            const perfil = profilesOnCurrentPage.find(p => p.id == id);
             profileIdToDelete = perfil.id;
-            confirmDeleteMessage.textContent = `Tem certeza que deseja excluir o perfil "${perfil?.nome}"?`;
-            confirmDeleteModal.style.display = 'flex';
+            confirmDeleteModalManager.open(modal => {
+                modal.querySelector('#confirm-delete-message').textContent = `Tem certeza que deseja excluir o perfil "${perfil?.nome}"?`;
+            });
         }
     });
 
-     btnConfirmDelete.addEventListener('click', async () => {
+    btnConfirmDelete.addEventListener('click', async () => {
         if (profileIdToDelete === null) return;
-        
+
         try {
             await apiPerfilService.deletar(profileIdToDelete);
             showNotification('Perfil excluído com sucesso!', 'success');
@@ -179,18 +140,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             showNotification(`Erro ao excluir perfil: ${error.message}`, 'error');
         } finally {
-            confirmDeleteModal.style.display = 'none';
+            confirmDeleteModalManager.close();
             profileIdToDelete = null;
         }
     });
 
-    btnCancelDelete.addEventListener('click', () => {
-        confirmDeleteModal.style.display = 'none';
-        profileIdToDelete = null;
-    });
-
-    addProfileButton.addEventListener('click', () => openEditModal());
-    btnCancel.addEventListener('click', closeEditModal);
-    
     fetchAndRenderProfiles();
 });
