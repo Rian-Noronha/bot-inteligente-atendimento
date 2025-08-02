@@ -7,7 +7,6 @@ const { getPaginationParams, buildPaginationResponse } = require('../utils/pagin
  * Pegando todas as categorias.
  */
 exports.pegarTodasCategorias = async (req, res) => {
-    // try...catch removido, o asyncHandler nas rotas irá capturar erros.
     const categorias = await Categoria.findAll();
     res.status(200).json(categorias);
 };
@@ -16,7 +15,6 @@ exports.pegarTodasCategorias = async (req, res) => {
  * Busca categorias com paginação e filtro de busca.
  */
 exports.pegarCategoriasPorPaginacao = async (req, res) => {
-    // try...catch removido.
     const { page, limit, offset, search } = getPaginationParams(req.query);
 
     let whereClause = {};

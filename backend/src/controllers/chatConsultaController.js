@@ -1,20 +1,9 @@
 const redisClient = require('../config/redisClient');
-const { ChatConsulta, ChatSessao, Subcategoria, ChatResposta, sequelize } = require('../models');
+const { ChatConsulta, ChatSessao, Subcategoria, ChatResposta } = require('../models');
 const axios = require('axios');
 const { validarCamposObrigatorios } = require('../utils/validation');
-const AI_SERVICE_ASK_URL = 'http://localhost:8000/api/ask';
-const AI_SERVICE_ASK_EMBEDDING_URL = 'http://localhost:8000/api/askembedding/';
-
-const withTransaction = (fn) => async (req, res) => {
-    const t = await sequelize.transaction();
-    try {
-        await fn(req, res, t);
-        await t.commit();
-    } catch (error) {
-        await t.rollback();
-        throw error; // Lança o erro para o asyncHandler tratar
-    }
-};
+const { urls: aiUrls } = require('../config/aiServiceConfig'); 
+const withTransaction = require('../middlewares/transactionMiddleware');
 
 /**
  * @description Realiza a consulta ao chatbot, busca em cache, histórico, gera embedding e obtém resposta da IA.
@@ -81,7 +70,7 @@ exports.criarConsultaEObterResposta = withTransaction(async (req, res, t) => {
     try { // O try/catch para a chamada externa à IA deve está, pois é uma falha específica
           // que pode não invalidar a transação principal ou queira ser tratada localmente.
           // Se o embedding falhar, a transação continua, mas sem o embedding.
-        const embeddingResponse = await axios.post(AI_SERVICE_ASK_EMBEDDING_URL, { text: pergunta });
+        const embeddingResponse = await axios.post(aiUrls.askEmbedding, { text: pergunta });
         perguntaEmbedding = embeddingResponse.data.embedding;
     } catch (embError) {
         console.error("[Node.js] Falha ao gerar embedding para a pergunta:", embError.message);
@@ -95,7 +84,7 @@ exports.criarConsultaEObterResposta = withTransaction(async (req, res, t) => {
     }, { transaction: t });
 
     // --- chamando a ia com histórico no payload ---
-    const responseIA = await axios.post(AI_SERVICE_ASK_URL, {
+    const responseIA = await axios.post(aiUrls.ask, {
         question: pergunta,
         sessao_id: sessao_id,
         subcategoria_id: subcategoria_id,

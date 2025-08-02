@@ -5,7 +5,6 @@ const { validarCamposObrigatorios } = require('../utils/validation');
  * @description Pega todas as palavras-chave do banco de dados.
  */
 exports.pegarTodasPalavrasChave = async (req, res) => {
-    // try...catch removido, o asyncHandler nas rotas irá capturar erros.
     const palavrasChave = await PalavraChave.findAll({
         order: [['palavra', 'ASC']]
     });
@@ -22,7 +21,6 @@ exports.pegarPalavraChavePorId = async (req, res) => {
     if (palavraChave) {
         res.status(200).json(palavraChave);
     } else {
-        // Lança um erro 404 que o errorHandler irá capturar.
         throw { status: 404, message: 'Palavra-chave não encontrada.' };
     }
 };

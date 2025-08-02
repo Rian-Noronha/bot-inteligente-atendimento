@@ -5,19 +5,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { enviarEmailRecuperacao } = require('../services/emailService');
-const { validarCamposObrigatorios } = require('../utils/validation'); // <-- Importado aqui!
-
-// Helper para encapsular transações, revertendo em caso de erro.
-const withTransaction = (fn) => async (req, res) => {
-    const t = await sequelize.transaction();
-    try {
-        await fn(req, res, t);
-        await t.commit();
-    } catch (error) {
-        await t.rollback();
-        throw error; // Lança o erro para o asyncHandler tratar
-    }
-};
+const { validarCamposObrigatorios } = require('../utils/validation'); 
+const withTransaction = require('../middlewares/transactionMiddleware');
 
 /**
  * @description Realiza o login, invalida sessões antigas e cria uma nova sessão ativa.

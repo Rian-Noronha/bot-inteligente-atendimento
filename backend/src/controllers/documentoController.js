@@ -1,26 +1,12 @@
 const firebaseStorageService = require('../services/firebaseStorageService');
-const { Documento, Subcategoria, Categoria, PalavraChave, sequelize} = require('../models');
-const {Op} = require('sequelize');
+const { Documento, Subcategoria, Categoria, PalavraChave } = require('../models');
+const { Op } = require('sequelize');
 const axios = require('axios');
 const { validarCamposObrigatorios } = require('../utils/validation');
+const withTransaction = require('../middlewares/transactionMiddleware');
 const { getPaginationParams, buildPaginationResponse } = require('../utils/pagination');
-const AI_SERVICE_PROCESS_URL = 'http://localhost:8000/api/documents/process';
-const redisClient = require('../config/redisClient')
-
-/**
- * encapsular transações, revertendo em caso de erro.
- */
-const withTransaction = (fn) => async (req, res) => {
-    const t = await sequelize.transaction();
-    try {
-        await fn(req, res, t);
-        await t.commit();
-    } catch (error) {
-        await t.rollback();
-        throw error; 
-    }
-};
-
+const redisClient = require('../config/redisClient');
+const { urls: aiUrls } = require('../config/aiServiceConfig');
 
 /**
  * Limpa todas as chaves de resposta do bot no cache Redis,
@@ -74,7 +60,7 @@ exports.criarDocumento = withTransaction(async (req, res, t) => {
     let responseIA;
     try {
         // IA para processar o conteúdo
-        responseIA = await axios.post(AI_SERVICE_PROCESS_URL, payloadParaIA);
+        responseIA = await axios.post(aiUrls.process, payloadParaIA);
     } catch (error) {
         if (error.response) {
             throw { status: error.response.status || 500, message: `Erro da API de IA ao processar o documento: ${JSON.stringify(error.response.data)}` };
@@ -153,7 +139,7 @@ exports.atualizarDocumento = withTransaction(async (req, res, t) => {
 
     let responseIA;
     try {
-        responseIA = await axios.post(AI_SERVICE_PROCESS_URL, payloadParaIA);
+        responseIA = await axios.post(aiUrls.process, payloadParaIA);
     } catch (error) {
         if (error.response) {
             throw { status: error.response.status || 500, message: `Erro da API de IA ao reprocessar o documento: ${JSON.stringify(error.response.data)}` };

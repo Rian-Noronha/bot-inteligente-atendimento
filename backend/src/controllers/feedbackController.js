@@ -1,7 +1,7 @@
 const { Feedback, ChatResposta, ChatConsulta } = require('../models');
 const axios = require('axios');
 const { validarCamposObrigatorios } = require('../utils/validation');
-const AI_SERVICE_PENDENCIES_URL = 'http://localhost:8000/api/pendencies/';
+const { urls: aiUrls } = require('../config/aiServiceConfig');
 
 /**
  * Cria um novo feedback para uma resposta.
@@ -38,7 +38,7 @@ exports.criarFeedback = async (req, res) => {
     if (util === false) {
         try {
             console.log(`[Node.js] Feedback negativo. Enviando pergunta (Consulta ID: ${resposta.consulta.id}) para o AI Service.`);
-            await axios.post(AI_SERVICE_PENDENCIES_URL, {
+            await axios.post(aiUrls.pendencies, {
                 question: resposta.consulta.pergunta,
                 consulta_id: resposta.consulta.id 
             });

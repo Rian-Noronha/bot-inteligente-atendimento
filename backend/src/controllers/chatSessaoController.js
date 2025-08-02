@@ -1,4 +1,4 @@
-const { ChatSessao, Usuario } = require('../models');
+const { ChatSessao} = require('../models');
 
 exports.iniciarSessao = async (req, res) => {
     const usuario_id = req.user.id;
