@@ -17,6 +17,12 @@
   --sombra: rgba(0, 0, 0, 0.1);
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -322,16 +328,23 @@ input::placeholder {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  position: relative;
-  /* Para posicionar o botão de voltar */
   text-align: left;
-  /* Alinha o texto à esquerda dentro do card */
 }
 
-.card-pergunta h4 {
+.card-header-pergunta {
+  position: relative; /* Essencial para posicionar o botão dentro dele */
+  display: flex;
+  align-items: center; /* Alinha verticalmente o botão e o título */
+  margin-bottom: 5px;  /* Reduzido para ficar mais próximo do seletor */
+  min-height: 40px;    /* Garante uma altura mínima para evitar colapso */
+}
+
+.card-header-pergunta h4 {
+  flex-grow: 1;       /* Faz o título ocupar todo o espaço horizontal */
+  text-align: center; /* Centraliza o texto DENTRO do seu espaço */
+  margin: 0;          /* Remove margens padrão que podem atrapalhar */
+  padding: 0 80px;    /* CRUCIAL: Cria espaço nas laterais para o botão */
   color: var(--cor-verdeforte);
-  margin-bottom: 5px;
-  /* Espaçamento abaixo do título */
   font-size: 1.2rem;
 }
 
@@ -383,14 +396,6 @@ input::placeholder {
   font-size: 1.2rem;
 }
 
-
-/* Ajuste do título para não sobrepor o botão de voltar */
-.card-pergunta h4:first-child {
-  margin-top: 25px;
-  /* Ajuste para dar espaço ao botão de voltar */
-  text-align: center;
-  /* Centraliza o "Faça sua pergunta" */
-}
 
 
 .right-chatbot .card-resposta {
@@ -1038,6 +1043,25 @@ body.upload-page {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   z-index: 10;
   /* Garante que ele fique acima de outros elementos */
+}
+
+.card-header-pergunta #back-button {
+  position: absolute; /* Posição absoluta dentro do .card-header-pergunta */
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%); /* Centralização vertical perfeita */
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: var(--cor-verdeforte);
+  color: var(--cor-fonte-alt);
+  padding: 8px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 }
 
 #back-button:hover {
@@ -2613,6 +2637,28 @@ body.upload-page {
     /* Garante que o card esteja centralizado dentro do right-login */
   }
 
+  .main-chatbot {
+    flex-direction: column; /* Garante que os cards fiquem um sobre o outro */
+    padding: 10px;
+  }
+
+  .card-pergunta,
+  .card-resposta {
+    width: 100%; /* Garante que os cards ocupem toda a largura */
+    max-width: none;
+  }
+
+  .card-header-pergunta h4 {
+    padding: 0 55px; /* Padding do título da pergunta em mobile */
+  }
+
+  .card-resposta .resposta h4 {
+    font-size: 1.1rem;      /* Reduz a fonte para caber melhor */
+    text-align: center;   /* Centraliza para a quebra de linha ficar bonita */
+    margin-bottom: 15px;  /* Garante um bom espaçamento */
+    line-height: 1.3;     /* Melhora a leitura se o texto quebrar */
+  }
+
 
 }
 
@@ -2738,22 +2784,20 @@ body.upload-page {
     /* Permite que os cards se ajustem */
   }
 
-  .card-pergunta h4:first-child {
-    margin-top: 15px;
-    /* Ajuste para o botão de voltar */
+  .card-header-pergunta h4 {
+      /* O padding é menor para se adequar à fonte e ao botão menores neste modo */
+      padding: 0 45px;
+      font-size: 1rem; /* Você já tinha essa regra para .card-pergunta h4 */
   }
 
-  .card-pergunta #back-button {
-    top: 5px;
-    left: 5px;
-    font-size: 0.7rem;
-    padding: 3px 5px;
+  .card-pergunta h4 {
+    font-size: 1rem; /* Fonte ainda menor */
   }
 
-  .card-pergunta h4,
-  .card-resposta h4 {
-    font-size: 1rem;
-    /* Fonte ainda menor */
+  .card-resposta .resposta h4 {
+    font-size: 1.1rem;      /* 1. Reduz um pouco a fonte */
+    text-align: center;   /* 2. Centraliza o texto */
+    margin-bottom: 15px;  /* 3. Garante um bom espaçamento abaixo */
   }
 
   .card-pergunta input[type="text"],
