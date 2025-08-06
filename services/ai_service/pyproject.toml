@@ -1,8 +1,28 @@
-[project]
-name = "ai_service"
+[tool.poetry]
+name = "ai-service"
 version = "0.1.0"
 description = "Serviço de IA para o Bot de Atendimento Inteligente"
+authors = ["Rian Noronha riannoronha011@gmail.com"]
+readme = "README.md"
 
-[tool.setuptools.packages.find]
-# Encontra automaticamente todos os pacotes (pastas com __init__.py)
-where = ["."] 
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.116.1"
+uvicorn = "^0.35.0"
+sqlalchemy = "^2.0.42"
+psycopg2-binary = "^2.9.10"
+pgvector = "^0.4.1"
+pydantic-settings = "^2.10.1"
+python-dotenv = "^1.1.1"
+langchain = "^0.3.27"
+langchain-groq = "^0.3.7"
+google-generativeai = "^0.8.5"
+requests = "^2.32.4"
+aiofiles = "^24.1.0"
+python-multipart = "^0.0.20"
+unstructured = {extras = ["local-inference"], version = "^0.18.11"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

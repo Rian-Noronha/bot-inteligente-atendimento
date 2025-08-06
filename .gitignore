@@ -1,12 +1,25 @@
-/backend/node_modules
-/backend/src/config/bot-atendimento-inteligente-firebase-adminsdk-fbsvc-68b6146799.json
-/front/node_modules
-/services/ai_service/venv/
-/services/ai_service/.venv/
+# --- Ambientes Virtuais (Python) ---
+venv/
+.venv/
+
+# --- Artefatos de Build e Cache (Python) ---
 **/__pycache__/
+*.egg-info/
+/dist/
+
+# --- Dependências de Projeto (Node.js) ---
+node_modules/
+
+# --- Arquivos de Configuração e Segredos ---
 **/.env
+/backend/src/config/bot-atendimento-inteligente-firebase-adminsdk-fbsvc-68b6146799.json
+
+# --- Caches de Ferramentas de Front-end ---
+.vite/
+.parcel-cache/
+.svelte-kit/
+/build/
+
+# --- Arquivos de Sistema Operacional ---
 .DS_Store
 Thumbs.db
-
-.vite
-
