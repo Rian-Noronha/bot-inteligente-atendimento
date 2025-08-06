@@ -33,6 +33,8 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+    volumes:
+      - ./services/ai_service:/app
 
   backend:
     build: ./backend
@@ -46,6 +48,10 @@ services:
       - redis
       - ai_service
     restart: unless-stopped
+    volumes:
+      - ./backend:/usr/src/app
+      # Proteger a pasta node_modules de dentro do contêiner
+      - /usr/src/app/node_modules
 
   frontend:
     build: ./front
