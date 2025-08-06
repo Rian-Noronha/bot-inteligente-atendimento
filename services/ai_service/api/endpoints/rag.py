@@ -1,4 +1,4 @@
-import traceback
+import logging
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text, Connection
 from langchain_core.prompts import ChatPromptTemplate
@@ -7,14 +7,15 @@ from langchain_core.runnables import RunnableLambda
 from schemas.document import AskRequest, RespostaFormatada
 from models.loader import embeddings_model, llm_principal
 from config.database import engine
+from config.settings import settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
-SIMILARITY_THRESHOLD_FOR_CACHE = 0.95
-
 
 def _search_semantic_cache(question: str, connection: Connection):
     """Busca por uma pergunta similar no cache semântico."""
-    print(f"Buscando no cache semântico para a pergunta: '{question}'")
+    logger.info(f"Buscando no cache semântico para a pergunta: '{question}'")
     embedding = embeddings_model.embed_query(question)
     query = text("""
         SELECT cr.texto_resposta, cr.url_fonte, d.titulo AS titulo_fonte,
@@ -26,11 +27,11 @@ def _search_semantic_cache(question: str, connection: Connection):
     """)
     result = connection.execute(query, {"q_vector": embedding}).mappings().fetchone()
     
-    if result and result['similarity'] > SIMILARITY_THRESHOLD_FOR_CACHE:
-        print(f"✅ CACHE SEMÂNTICO HIT! Similaridade: {result['similarity']:.4f}")
+    if result and result['similarity'] > settings.SIMILARITY_THRESHOLD_FOR_CACHE:
+        logger.info(f"CACHE SEMÂNTICO HIT! Similaridade: {result['similarity']:.4f}")
         return result
     if result:
-        print(f"CACHE SEMÂNTICO MISS. Similaridade: {result['similarity']:.4f}")
+       logger.debug(f"CACHE SEMÂNTICO MISS. Similaridade mais próxima: {result['similarity']:.4f}")
     return None
 
 def _rewrite_question_with_history(request: AskRequest) -> str:
@@ -38,7 +39,7 @@ def _rewrite_question_with_history(request: AskRequest) -> str:
     if not request.chat_history:
         return request.question
 
-    print("Histórico recebido. Re-escrevendo a pergunta...")
+    logger.info("Histórico recebido. Re-escrevendo a pergunta...")
     history = "\n".join([f"Operador: {turn.pergunta}\nIA: {turn.texto_resposta}" for turn in request.chat_history])
     
     # Usando o seu prompt original
@@ -68,13 +69,13 @@ def _rewrite_question_with_history(request: AskRequest) -> str:
     chain = rewrite_prompt | llm_principal | StrOutputParser() | RunnableLambda(clean_llm_output)
     rewritten_question = chain.invoke({"chat_history": history, "question": request.question})
     
-    print(f"-> Pergunta Original: '{request.question}'")
-    print(f"-> Pergunta Re-escrita para busca: '{rewritten_question}'")
+    logger.debug(f"-> Pergunta Original: '{request.question}'")
+    logger.info(f"-> Pergunta Re-escrita para busca: '{rewritten_question}'")
     return rewritten_question
 
 def _perform_rag_retrieval(question: str, top_k: int, subcategoria_id: int | None, connection: Connection):
     """Executa a busca RAG, sempre retornando os top_k melhores resultados, sem filtrar por score."""
-    print(f"Prosseguindo com RAG para '{question}' (top_k={top_k})")
+    logger.info(f"Prosseguindo com RAG para '{question}' (top_k={top_k}, subcategoria_id={subcategoria_id})")
     embedding = embeddings_model.embed_query(question)
     
     params = {"q_vector": embedding, "top_k": top_k}
@@ -94,18 +95,18 @@ def _perform_rag_retrieval(question: str, top_k: int, subcategoria_id: int | Non
     results = connection.execute(text(query_text), params).mappings().all()
 
     if not results:
-        print("!!! RAG FALHOU: Nenhum documento encontrado.")
+        logger.warning(f"RAG não retornou documentos para a pergunta: '{question}'")
         return None
 
-    print("\n--- Documentos Encontrados pelo RAG (com Scores) ---")
+    logger.debug("--- Documentos Encontrados pelo RAG (com Scores) ---")
     for doc in results:
-        print(f"  - ID: {doc['id']:<4} | Score: {doc['similarity']:.4f} | Título: '{doc['titulo']}'")
-    print("------------------------------------------------------\n")
+        logger.debug(f"  - ID: {doc['id']:<4} | Score: {doc['similarity']:.4f} | Título: '{doc['titulo']}'")
+    logger.debug("------------------------------------------------------")
     return results
 
 def _generate_final_answer(context: str, question: str) -> RespostaFormatada:
     """Usa o LLM para analisar o contexto e gerar a resposta final estruturada."""
-    print("Consolidando para análise pelo LLM.")
+    logger.info("Consolidando contexto para análise pelo LLM.")
     structured_llm = llm_principal.with_structured_output(RespostaFormatada)
     
     generation_prompt = ChatPromptTemplate.from_template(
@@ -160,7 +161,7 @@ async def ask_question(request: AskRequest):
             
             # Etapa 5: Formatar e retornar a resposta
             if llm_output.id_fonte == 0:
-                print("Resposta final gerada. Nenhuma fonte relevante encontrada.")
+                logger.info("Resposta final gerada. Nenhuma fonte relevante encontrada pelo LLM.")
                 return {
                     "answer": llm_output.resposta_texto,
                     "source_document_id": 0,
@@ -172,7 +173,7 @@ async def ask_question(request: AskRequest):
             source_doc = next((doc for doc in rag_results if doc['id'] == llm_output.id_fonte), rag_results[0])
             
             if not source_doc:
-                print(f"ALERTA: LLM retornou ID de fonte ({llm_output.id_fonte}) que não foi encontrado nos resultados do RAG.")
+                logger.warning(f"ALERTA: LLM retornou ID de fonte ({llm_output.id_fonte}) que não foi encontrado nos resultados do RAG.")
                 # Retorna a resposta do LLM, mas sem link de fonte.
                 return {
                     "answer": llm_output.resposta_texto,
@@ -181,7 +182,7 @@ async def ask_question(request: AskRequest):
                     "source_document_title": "Fonte não localizada"
                 }
             
-            print(f"Resposta final gerada. Fonte escolhida: ID {source_doc['id']}")
+            logger.info(f"Resposta final gerada. Fonte escolhida: ID {source_doc['id']}")
             return {
                 "answer": llm_output.resposta_texto,
                 "source_document_id": source_doc['id'],
@@ -190,5 +191,5 @@ async def ask_question(request: AskRequest):
             }
 
     except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Ocorreu um erro inesperado ao processar a pergunta em /ask")
+        raise HTTPException(status_code=500, detail="Ocorreu um erro interno ao processar sua pergunta.")

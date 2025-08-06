@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     LLM_MODEL_NAME: str = "llama-3.1-8b-instant"
     REASONING_LLM_MODEL_NAME: str = "llama-3.3-70b-versatile"
 
+    SIMILARITY_THRESHOLD_FOR_CACHE: float = 0.95
+
     # Propriedade para construir a URL de conexão dinamicamente
     @property
     def DATABASE_URL(self) -> str:

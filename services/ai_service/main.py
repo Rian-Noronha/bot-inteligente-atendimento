@@ -1,6 +1,10 @@
 import uvicorn
 from fastapi import FastAPI
 from api.router import api_router 
+from config.logging_config import setup_logging
+import logging
+
+setup_logging(level=logging.INFO)
 
 # Cria a instância principal da aplicação FastAPI
 app = FastAPI(
