@@ -18,8 +18,12 @@ def _search_semantic_cache(question: str, connection: Connection):
     logger.info(f"Buscando no cache semântico para a pergunta: '{question}'")
     embedding = embeddings_model.embed_query(question)
     query = text("""
-        SELECT cr.texto_resposta, cr.url_fonte, d.titulo AS titulo_fonte,
-               (1 - (c.embedding <=> (:q_vector)::vector)) AS similarity
+        SELECT 
+            cr.texto_resposta, 
+            d.id AS source_document_id,
+            d."urlArquivo" AS source_document_url,  -- CORREÇÃO: Buscando da tabela de documentos 'd'
+            d.titulo AS source_document_title,
+            (1 - (c.embedding <=> (:q_vector)::vector)) AS similarity
         FROM chat_consultas c 
         JOIN chat_respostas cr ON c.id = cr.consulta_id
         LEFT JOIN documentos d ON cr.documento_fonte = d.id
@@ -142,9 +146,12 @@ async def ask_question(request: AskRequest):
             # Etapa 1: Tentar responder com o cache
             cached_response = _search_semantic_cache(request.question, connection)
             if cached_response:
-                return {
-                    "answer": cached_response['texto_resposta'], "source_document_id": None,
-                    "source_document_url": cached_response['url_fonte'], "source_document_title": cached_response['titulo_fonte']
+                 logger.info(f"Retornando resposta do cache. Fonte original ID: {cached_response.get('source_document_id')}")
+                 return {
+                    "answer": cached_response['texto_resposta'],
+                    "source_document_id": cached_response['source_document_id'],
+                    "source_document_url": cached_response['source_document_url'],
+                    "source_document_title": cached_response['source_document_title']
                 }
 
             # Etapa 2: Reescrever a pergunta com base no histórico
