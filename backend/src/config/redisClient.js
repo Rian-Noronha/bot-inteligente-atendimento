@@ -1,15 +1,20 @@
 const { createClient } = require('redis');
 
+const redisHost = process.env.REDIS_HOST || 'localhost';
+const redisPort = process.env.REDIS_PORT || 6379;
+
+const redisUrl = `redis://${redisHost}:${redisPort}`;
+
 const redisClient = createClient({
-    url: 'redis://10.0.0.112:6379'
+    url: redisUrl
 });
 
 redisClient.on('connect', () => {
-    console.log('Conectado ao Redis com sucesso!');
+    console.log(`Conectado ao Redis com sucesso em: ${redisUrl}`);
 });
 
 redisClient.on('error', (err) => {
-    console.error('Erro na conexão com o Redis:', err);
+    console.error(`Erro na conexão com o Redis em: ${redisUrl}`, err);
 });
 
 (async () => {

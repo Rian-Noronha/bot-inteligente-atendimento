@@ -9,6 +9,28 @@ venv/
 
 # --- Dependências de Projeto (Node.js) ---
 node_modules/
+# Logs de erro de gerenciadores de pacotes
+npm-debug.log*
+yarn-error.log
+yarn-debug.log*
+
+# --- Arquivos de Log ---
+# Ignora qualquer arquivo que termine com .log
+*.log
+*.log.*
+
+# --- Relatórios de Teste e Cobertura ---
+# Ignora caches e relatórios de ferramentas de teste como pytest e coverage
+.pytest_cache/
+.coverage
+/htmlcov/
+
+# --- Configurações de IDEs e Editores ---
+# Previne que configurações pessoais de editores sejam enviadas
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 
 # --- Arquivos de Configuração e Segredos ---
 **/.env
