@@ -19,7 +19,7 @@ async def process_document_endpoint(request: DocumentProcessRequest):
     Retorna uma lista de documentos (chunks) com seus embeddings, prontos
     para serem salvos no banco de dados pelo Node.js.
     """
-    logger.info(f"Iniciando processamento para o documento '{request.titulo}' (ID: {request.documento_id})")
+    logger.info(f"Iniciando processamento para o documento '{request.titulo}'")
     try:
         documents_to_save = await process_and_generate_chunks(request)
         
@@ -35,5 +35,5 @@ async def process_document_endpoint(request: DocumentProcessRequest):
         logger.warning(f"Erro de validação ao processar documento '{request.titulo}': {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"Erro inesperado ao processar o documento '{request.titulo}' (ID: {request.documento_id})")
+        logger.exception(f"Erro inesperado ao processar o documento '{request.titulo}'")
         raise HTTPException(status_code=500, detail="Ocorreu um erro inesperado no processamento do documento.")

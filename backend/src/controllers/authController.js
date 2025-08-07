@@ -7,6 +7,7 @@ const { v4: uuidv4 } = require('uuid');
 const { enviarEmailRecuperacao } = require('../services/emailService');
 const { validarCamposObrigatorios } = require('../utils/validation'); 
 const withTransaction = require('../middlewares/transactionMiddleware');
+const admin = require('firebase-admin');
 
 /**
  * @description Realiza o login, invalida sessões antigas e cria uma nova sessão ativa.
@@ -46,9 +47,18 @@ exports.login = withTransaction(async (req, res, t) => {
     
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' });
 
+    let firebaseCustomToken;
+    try{
+        firebaseCustomToken = await admin.auth().createCustomToken(usuario.id.toString());
+        console.log(`[Backend] Token customizado do Firebase gerado para o usuário ${usuario.id}.`);
+    }catch(error){
+        console.error("Erro ao criar token customizado do Firebase:", error);
+        throw { status: 500, message: "Erro de autenticação interna. Tente novamente mais tarde." };
+    }
+
     const { senha_hash, ...usuarioSemSenha } = usuario.toJSON();
     
-    res.status(200).json({ token, usuario: payload });
+    res.status(200).json({ token, firebaseCustomToken, usuario: payload });
 });
 
 /**

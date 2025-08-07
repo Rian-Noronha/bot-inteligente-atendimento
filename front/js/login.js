@@ -1,5 +1,7 @@
 import { apiLoginService } from './services/apiLoginService.js';
 import { isValidEmail } from './utils/validators.js';
+import { auth } from './config/firebase.js';
+import { signInWithCustomToken } from 'firebase/auth';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
@@ -44,6 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault(); 
         const email = emailInput.value.trim();
         const password = passwordInput.value.trim();
+        const submitButton = loginForm.querySelector('button[type="submit"]');
+
         if (!email || !password) {
             showMessage('Por favor, preencha os campos de e-mail e senha.', true);
             return;
@@ -55,38 +59,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            showMessage('Entrando no painel administrativo...');
+            submitButton.disabled = true;
+            showMessage('Validando credenciais...');
             
-            // Chama a API para tentar fazer o login
+            // 1. Chama a API de login do seu backend
             const loginData = await apiLoginService.login(email, password);
 
-            if (loginData.token && loginData.usuario) {
-                // 1. Guarda o token e os dados do utilizador no localStorage
+            if (loginData.token && loginData.usuario && loginData.firebaseCustomToken) {
+                // 2. Salva os dados da sua API no localStorage
                 localStorage.setItem('authToken', loginData.token);
+                localStorage.setItem('firebaseCustomToken', loginData.firebaseCustomToken); // <-- SALVANDO O TOKEN DO FIREBASE
                 localStorage.setItem('loggedInUser', JSON.stringify(loginData.usuario));
+                localStorage.setItem('active_session_id', loginData.usuario.sessionId);
+                
+                // 3. Autentica no Firebase com o token customizado
+                await signInWithCustomToken(auth, loginData.firebaseCustomToken);
+                console.log("Autenticação com Firebase bem-sucedida!");
 
-                // 2. Pega o ID da sessão que veio do backend e o usa como validador
-                const sessionId = loginData.usuario.sessionId; 
-                if (!sessionId) {
-                    // Garante que o backend está a enviar o sessionId
-                    throw new Error('Falha na autenticação: ID de sessão não recebido do servidor.');
-                }
-                localStorage.setItem('active_session_id', sessionId);
-                sessionStorage.setItem('my_tab_session_id', sessionId);
+                // 4. Inicia o timer de inatividade
                 localStorage.setItem('last_activity_time', Date.now());
 
-                // 3. Redireciona com base no perfil do utilizador
-                const perfilNome = loginData.usuario.perfil.nome;
-                if (perfilNome.toLowerCase() === 'administrador') {
+                // 5. Redireciona com base no perfil do utilizador
+                const perfilNome = loginData.usuario.perfil.nome.toLowerCase();
+                if (perfilNome === 'administrador') {
                     window.location.href = './pages/dashboard.html';
                 } else {
                     window.location.href = './pages/chatbot.html';
                 }
+            } else {
+                throw new Error('Resposta de login inválida do servidor.');
             }
 
         } catch (error) {
             console.error('Falha no login:', error);
-            showMessage(error.message, true);
+            showMessage('E-mail ou senha incorretos. Por favor, tente novamente.', true);
+            submitButton.disabled = false;
         }
     });
 });

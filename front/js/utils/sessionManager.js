@@ -1,4 +1,5 @@
 import { apiAuthService } from '../services/apiAuthService.js';
+import { getAuth, signOut } from 'firebase/auth';
 
 const TIMEOUT_DURATION = 5 * 60 * 1000; // 5 minutos
 let timeoutInterval;
@@ -16,13 +17,21 @@ export async function logoutUser(reasonKey = null) {
     } catch (error) {
         console.error("Erro ao notificar o servidor sobre o logout:", error);
     } finally {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('loggedInUser');
-        localStorage.removeItem('active_session_id');
-        localStorage.removeItem('last_activity_time');
-        sessionStorage.removeItem('my_tab_session_id');
+        try {
 
-        // Constrói a URL de redirecionamento com o motivo
+            const auth = getAuth();
+            if (auth.currentUser) {
+                await signOut(auth);
+                console.log("Sessão do Firebase encerrada no cliente.");
+            }
+
+        } catch (error) {
+            console.error("Erro ao fazer logout do Firebase:", error);
+        }
+
+        localStorage.clear();
+        sessionStorage.clear();
+
         let redirectUrl = '../index.html';
         if (reasonKey) {
             redirectUrl += `?reason=${reasonKey}`;

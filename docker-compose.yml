@@ -35,6 +35,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./services/ai_service:/app
+      - /app/venv
 
   backend:
     build: ./backend
@@ -54,13 +55,18 @@ services:
       - /usr/src/app/node_modules
 
   frontend:
-    build: ./front
+    build: 
+      context: ./front
+      dockerfile: Dockerfile.dev
     container_name: bot_frontend
     ports:
-      - "5173:80"
+      - "5173:5173" 
     depends_on:
       - backend
     restart: unless-stopped
+    volumes: 
+      - ./front:/app
+      - /app/node_modules
 
 volumes:
   postgres_data:

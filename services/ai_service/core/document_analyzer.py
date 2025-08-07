@@ -15,7 +15,7 @@ async def process_and_generate_chunks(request_data: DocumentProcessRequest) -> L
     os chunks de forma otimizada usando uma única chamada de API em lote.
     """
 
-    logger.info(f"Iniciando processamento e chunking para o documento ID: {request_data.documento_id}")
+    logger.info(f"Iniciando processamento e chunking para o documento : {request_data.titulo}")
     
     logical_blocks = []
     fallback_keywords = request_data.palavras_chave
@@ -105,7 +105,7 @@ async def process_and_generate_chunks(request_data: DocumentProcessRequest) -> L
             "titulo": titulo_final,
             "descricao": descricao_final,
             "solucao": solucao_final,
-             "palavras_chave": [p.strip().rstrip('.') for p in palavras_chave_finais.split(',') if p.strip()]
+            "palavras_chave": [p.strip().rstrip('.') for p in palavras_chave_finais.split(',') if p.strip()]
         })
 
 

@@ -1,14 +1,14 @@
 import { apiCategoriaService } from './services/apiCategoriaService.js';
-import { apiPalavraChaveService } from './services/apiPalavraChaveService.js';
 import { apiKnowledgeLibraryService } from './services/apiKnowledgeLibraryService.js';
 import { storageService } from './services/storageService.js';
 import { startSessionManagement, logoutUser } from './utils/sessionManager.js';
 import { showNotification } from './utils/notifications.js';
+import { auth } from './config/firebase.js';
+import { signInWithCustomToken } from 'firebase/auth';
 
 document.addEventListener('DOMContentLoaded', () => {
-    startSessionManagement();
+    let isUserAuthenticated = false;
 
-    
     const form = document.getElementById('upload-form');
     const uploadButton = document.getElementById('uploadButton');
     const uploadStatus = document.getElementById('uploadStatus');
@@ -21,15 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const textSolutionTextarea = document.getElementById('text-solution');
     const arquivoInput = document.getElementById('arquivo-input');
     
-
-    if (logoutButton) {
-        logoutButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            logoutUser();
-        });
-    }
-
-
     async function popularTemas() {
         try {
             const temas = await apiCategoriaService.pegarTodasCategorias();
@@ -132,10 +123,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    
-    themeSelect.addEventListener('change', popularMicroTemas);
-    form.addEventListener('input', checkFormValidity);
-    
-    popularTemas();
-    checkFormValidity();
+    async function initializePage() {
+        try {
+            startSessionManagement();
+            console.log("Sessão local validada. Prosseguindo para autenticação do Firebase...");
+
+            // PASSO 2: Autenticação específica do Firebase
+            const firebaseCustomToken = localStorage.getItem('firebaseCustomToken');
+            if (!firebaseCustomToken) {
+                throw new Error("Token de autenticação para upload não encontrado.");
+            }
+
+            await signInWithCustomToken(auth, firebaseCustomToken);
+            
+            console.log("Autenticação com Firebase bem-sucedida. Uploads permitidos.");
+            isUserAuthenticated = true;
+
+        } catch (error) {
+            console.error("Falha na autenticação para upload:", error.message);
+            showNotification("Sua sessão é inválida para fazer uploads. Por favor, faça o login novamente.", 'error');
+        }
+
+        if (logoutButton) {
+            logoutButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                logoutUser();
+            });
+        }
+        
+        
+        themeSelect.addEventListener('change', popularMicroTemas);
+        form.addEventListener('input', checkFormValidity);
+        
+        await popularTemas();
+        
+        checkFormValidity();
+    }
+
+   
+    initializePage();
 });

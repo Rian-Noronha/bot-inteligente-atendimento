@@ -1,7 +1,8 @@
 // Arquivo de configuração do Firebase
 
 import { initializeApp } from "firebase/app";
-import { getStorage } from "firebase/storage"; 
+import { getStorage } from "firebase/storage";
+import { getAuth } from "firebase/auth"; 
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -18,3 +19,5 @@ const app = initializeApp(firebaseConfig);
 
 // Exporta a instância do Storage para ser usada em outros arquivos
 export const storage = getStorage(app);
+
+export const auth = getAuth(app); 
