@@ -20,8 +20,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Documento.init({
-    titulo: DataTypes.STRING,
-    descricao: DataTypes.STRING,
+    titulo: DataTypes.TEXT,
+    descricao: DataTypes.TEXT,
     solucao: DataTypes.TEXT,
     ativo: DataTypes.BOOLEAN,
     urlArquivo: DataTypes.STRING,

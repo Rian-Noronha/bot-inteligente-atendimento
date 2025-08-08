@@ -4,7 +4,7 @@ module.exports = (sequelize, DataTypes) => {
   class AssuntoPendente extends Model {
     static associate(models) {
       this.belongsTo(models.ChatConsulta, { foreignKey: 'consulta_id', as: 'consulta' });
-      this.belongsTo(models.Subcategoria, { foreignKey: 'subcategoria_id', as: 'subcategoria' });
+      this.belongsTo(models.Subcategoria, { foreignKey: 'subcategoria_id', as: 'subcategoria', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
     }
   }
   AssuntoPendente.init({

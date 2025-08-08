@@ -4,7 +4,7 @@ module.exports = {
     await queryInterface.createTable('chat_consultas', {
       id: { allowNull: false, autoIncrement: true, primaryKey: true, type: Sequelize.INTEGER },
       sessao_id: { type: Sequelize.INTEGER, allowNull: false, references: { model: 'chat_sessoes', key: 'id' }, onUpdate: 'CASCADE', onDelete: 'CASCADE' },
-      subcategoria_id: { type: Sequelize.INTEGER, allowNull: false, references: { model: 'subcategorias', key: 'id' }, onUpdate: 'CASCADE', onDelete: 'SET NULL' },
+      subcategoria_id: { type: Sequelize.INTEGER, allowNull: true, references: { model: 'subcategorias', key: 'id' }, onUpdate: 'CASCADE', onDelete: 'SET NULL' },
       pergunta: { type: Sequelize.STRING(300), allowNull: false },
       createdAt: { allowNull: false, type: Sequelize.DATE },
       updatedAt: { allowNull: false, type: Sequelize.DATE }

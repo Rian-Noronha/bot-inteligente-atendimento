@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 3000
 
 # Comando padrão para iniciar o 'node server.js'
-CMD [ "npm", "start" ]
+CMD [ "npm", "start", "dev"]

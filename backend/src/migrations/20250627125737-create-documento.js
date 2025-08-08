@@ -3,8 +3,8 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('documentos', {
       id: { allowNull: false, autoIncrement: true, primaryKey: true, type: Sequelize.INTEGER },
-      titulo: { type: Sequelize.STRING(100), allowNull: false },
-      descricao: { type: Sequelize.STRING(500), allowNull: false },
+      titulo: { type: Sequelize.TEXT, allowNull: false },
+      descricao: { type: Sequelize.TEXT, allowNull: false },
       solucao: { type: Sequelize.STRING(500), allowNull: false },
       ativo: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: true },
       urlArquivo: { type: Sequelize.STRING(255), allowNull: true },
