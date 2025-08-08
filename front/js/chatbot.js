@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentConsultaId = respostaCompleta.consulta_id;
             answerArea.value = respostaCompleta.answer;
 
-            if (respostaCompleta.source_document_id && respostaCompleta.source_document_id > 0) {
+            if (respostaCompleta.source_document_id && respostaCompleta.source_document_id > 0 && respostaCompleta.url_fonte != null) {
             sourceLinkArea.innerHTML = `<b>Fonte:</b> <a href="${respostaCompleta.url_fonte}" target="_blank" rel="noopener noreferrer">${respostaCompleta.titulo_fonte}</a>`;
             sourceLinkArea.style.display = 'block';
             } else {
